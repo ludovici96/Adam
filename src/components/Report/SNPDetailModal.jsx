@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useKeyboardShortcuts, useAnnounce } from '../../hooks/useKeyboardShortcuts';
 import {
   ExternalLink,
   AlertTriangle,
@@ -14,17 +15,46 @@ import {
   BookOpen,
   Link2,
   Dna,
-  ChevronRight
+  ChevronRight,
+  ChevronLeft,
+  Printer
 } from 'lucide-react';
 import { Modal, ModalFooter } from '../common/Modal';
 import { Button } from '../common/Button';
 import { MagnitudeBadge, CategoryBadge, ReputeBadge } from '../common/Badge';
 import { useAnalysis } from '../../context/AnalysisContext';
 
-export function SNPDetailModal({ match, isOpen, onClose, onSelectSNP }) {
+export function SNPDetailModal({
+  match,
+  isOpen,
+  onClose,
+  onSelectSNP,
+  onNext,
+  onPrevious,
+  hasNext,
+  hasPrevious
+}) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const { matches } = useAnalysis();
+  const announce = useAnnounce();
+
+  // Reset tab when match changes
+  useEffect(() => {
+    setActiveTab('overview');
+    if (match) {
+      announce(`Viewing ${match.rsid}, ${match.userGenotype || 'unknown genotype'}, magnitude ${match.magnitude}`);
+    }
+  }, [match?.rsid]);
+
+  // Keyboard navigation
+  useKeyboardShortcuts({
+    'ArrowRight': () => hasNext && onNext(),
+    'ArrowLeft': () => hasPrevious && onPrevious(),
+    'j': () => hasNext && onNext(),
+    'k': () => hasPrevious && onPrevious(),
+    'Escape': onClose
+  }, { enabled: isOpen });
 
   if (!match) return null;
 
@@ -62,6 +92,7 @@ export function SNPDetailModal({ match, isOpen, onClose, onSelectSNP }) {
       await navigator.clipboard.writeText(rsid);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      announce('RSID copied to clipboard');
     } catch (err) {
       console.error('Failed to copy:', err);
     }
@@ -85,6 +116,7 @@ export function SNPDetailModal({ match, isOpen, onClose, onSelectSNP }) {
         await navigator.clipboard.writeText(shareText);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+        announce('Share text copied to clipboard');
       } catch (err) {
         console.error('Failed to copy:', err);
       }
@@ -142,26 +174,61 @@ export function SNPDetailModal({ match, isOpen, onClose, onSelectSNP }) {
       isOpen={isOpen}
       onClose={onClose}
       title={
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <code className="text-xl font-mono">{rsid}</code>
+        <div className="flex items-center justify-between w-full pr-8">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <code className="text-xl font-mono">{rsid}</code>
+              <button
+                onClick={handleCopyRSID}
+                className={clsx(
+                  'p-1.5 rounded-lg transition-colors',
+                  'hover:bg-gray-200 dark:hover:bg-white/10',
+                  'text-[var(--text-secondary)]'
+                )}
+                title="Copy RSID"
+                aria-label="Copy RSID to clipboard"
+              >
+                {copied ? (
+                  <Check className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+            <MagnitudeBadge magnitude={magnitude} />
+          </div>
+
+          {/* Navigation Controls */}
+          <div className="flex items-center gap-1">
             <button
-              onClick={handleCopyRSID}
+              onClick={onPrevious}
+              disabled={!hasPrevious}
               className={clsx(
-                'p-1.5 rounded-lg transition-colors',
-                'hover:bg-gray-200 dark:hover:bg-white/10',
-                'text-[var(--text-secondary)]'
+                'p-2 rounded-lg transition-colors',
+                hasPrevious
+                  ? 'text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-white/10 hover:text-[var(--text-primary)]'
+                  : 'text-gray-300 dark:text-gray-700 cursor-not-allowed'
               )}
-              title="Copy RSID"
+              title="Previous SNP (Left Arrow / K)"
+              aria-label="Previous SNP"
             >
-              {copied ? (
-                <Check className="w-4 h-4 text-emerald-400" />
-              ) : (
-                <Copy className="w-4 h-4" />
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={onNext}
+              disabled={!hasNext}
+              className={clsx(
+                'p-2 rounded-lg transition-colors',
+                hasNext
+                  ? 'text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-white/10 hover:text-[var(--text-primary)]'
+                  : 'text-gray-300 dark:text-gray-700 cursor-not-allowed'
               )}
+              title="Next SNP (Right Arrow / J)"
+              aria-label="Next SNP"
+            >
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
-          <MagnitudeBadge magnitude={magnitude} />
         </div>
       }
       size="lg"

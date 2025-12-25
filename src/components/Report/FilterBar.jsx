@@ -140,6 +140,7 @@ export function FilterBar({ resultCount = 0 }) {
             ref={inputRef}
             type="text"
             placeholder="Search by RSID or keyword..."
+            aria-label="Search variants"
             value={filters.search}
             onChange={(e) => setFilter({ search: e.target.value })}
             onFocus={() => setShowSuggestions(true)}
@@ -164,6 +165,7 @@ export function FilterBar({ resultCount = 0 }) {
                 'hover:bg-gray-100 dark:hover:bg-white/10',
                 'transition-colors duration-200'
               )}
+              aria-label="Clear search"
             >
               <X className="w-4 h-4" />
             </button>
@@ -282,6 +284,7 @@ export function FilterBar({ resultCount = 0 }) {
           )} />
           <select
             value={`${sort.field}-${sort.direction}`}
+            aria-label="Sort by"
             onChange={(e) => {
               const option = sortOptions.find(o => o.id === e.target.value);
               if (option) {

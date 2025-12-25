@@ -1,8 +1,9 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useKeyboardShortcuts';
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -47,6 +48,9 @@ export function Modal({
   closeOnEscape = true,
   className
 }) {
+  const modalRef = useRef(null);
+  useFocusTrap(modalRef, isOpen);
+
   // Handle escape key
   const handleEscape = useCallback((e) => {
     if (e.key === 'Escape' && closeOnEscape) {
@@ -91,6 +95,7 @@ export function Modal({
 
           {/* Modal */}
           <motion.div
+            ref={modalRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={title ? 'modal-title' : undefined}

@@ -231,11 +231,27 @@ export function ReportView({ onBack, onExport }) {
       )}
 
       {/* Detail Modal */}
-      <SNPDetailModal
-        match={selectedSNP}
-        isOpen={!!selectedSNP}
-        onClose={closeModal}
-      />
+      {selectedSNP && (
+        <SNPDetailModal
+          match={selectedSNP}
+          isOpen={!!selectedSNP}
+          onClose={closeModal}
+          onNext={() => {
+            const index = filteredMatches.indexOf(selectedSNP);
+            if (index < filteredMatches.length - 1) {
+              selectSNP(filteredMatches[index + 1]);
+            }
+          }}
+          onPrevious={() => {
+            const index = filteredMatches.indexOf(selectedSNP);
+            if (index > 0) {
+              selectSNP(filteredMatches[index - 1]);
+            }
+          }}
+          hasNext={filteredMatches.indexOf(selectedSNP) < filteredMatches.length - 1}
+          hasPrevious={filteredMatches.indexOf(selectedSNP) > 0}
+        />
+      )}
     </div>
   );
 }
