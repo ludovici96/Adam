@@ -29,6 +29,7 @@ const initialState = {
 
   // Advanced analysis results
   riskScores: [],
+  pharmaResults: null,
   haplogroups: {
     yDNA: null,
     mtDNA: null
@@ -46,6 +47,7 @@ const ACTIONS = {
   SET_STATS: 'SET_STATS',
   SET_CATEGORIES: 'SET_CATEGORIES',
   SET_RISK_SCORES: 'SET_RISK_SCORES',
+  SET_PHARMA_RESULTS: 'SET_PHARMA_RESULTS',
   SET_HAPLOGROUPS: 'SET_HAPLOGROUPS',
   SET_DATABASE_INFO: 'SET_DATABASE_INFO',
   RESET: 'RESET'
@@ -85,6 +87,12 @@ function analysisReducer(state, action) {
       return {
         ...state,
         riskScores: action.payload
+      };
+
+    case ACTIONS.SET_PHARMA_RESULTS:
+      return {
+        ...state,
+        pharmaResults: action.payload
       };
 
     case ACTIONS.SET_HAPLOGROUPS:
@@ -141,6 +149,10 @@ export function AnalysisProvider({ children }) {
 
   const setRiskScores = useCallback((scores) => {
     dispatch({ type: ACTIONS.SET_RISK_SCORES, payload: scores });
+  }, []);
+
+  const setPharmaResults = useCallback((results) => {
+    dispatch({ type: ACTIONS.SET_PHARMA_RESULTS, payload: results });
   }, []);
 
   const setHaplogroups = useCallback((haplogroups) => {
@@ -229,6 +241,7 @@ export function AnalysisProvider({ children }) {
     setStats,
     setCategories,
     setRiskScores,
+    setPharmaResults,
     setHaplogroups,
     setDatabaseInfo,
     categorizeMatches,

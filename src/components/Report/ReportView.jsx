@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Download, FileText, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Download, FileText, ChevronDown, ChevronUp, BarChart2 } from 'lucide-react';
 import { FilterBar } from './FilterBar';
 import { SNPCard } from './SNPCard';
 import { SNPDetailModal } from './SNPDetailModal';
 import { Button } from '../common/Button';
+import { ChromosomeBrowser, MagnitudeChart, CategoryChart } from '../visualizations';
 import { useAnalysis } from '../../context/AnalysisContext';
 import { useUI } from '../../context/UIContext';
 
@@ -33,6 +34,7 @@ export function ReportView({ onBack, onExport }) {
   } = useUI();
 
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const [showVisualizations, setShowVisualizations] = useState(true);
 
   // Reset visible count when filters change
   useEffect(() => {
@@ -116,6 +118,51 @@ export function ReportView({ onBack, onExport }) {
           </Button>
         </div>
       </div>
+
+      {/* Visualizations Toggle */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => setShowVisualizations(!showVisualizations)}
+          className={clsx(
+            'flex items-center gap-2 px-4 py-2 rounded-xl transition-colors',
+            'text-sm font-medium',
+            showVisualizations
+              ? 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/20'
+              : 'bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] border border-gray-200 dark:border-white/10'
+          )}
+        >
+          <BarChart2 className="w-4 h-4" />
+          Visualizations
+          {showVisualizations ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </button>
+      </div>
+
+      {/* Visualizations Section */}
+      <AnimatePresence>
+        {showVisualizations && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-6">
+              {/* Chromosome Browser - Full Width */}
+              <ChromosomeBrowser matches={matches} onSelectSNP={selectSNP} />
+
+              {/* Charts Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <MagnitudeChart matches={matches} />
+                <CategoryChart categories={categories} />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Filter Bar */}
       <FilterBar resultCount={filteredMatches.length} />

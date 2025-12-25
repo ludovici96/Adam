@@ -14,6 +14,9 @@ import { UploadView } from './components/upload/UploadView';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { ReportView } from './components/report/ReportView';
 
+// Onboarding
+import { OnboardingFlow, useOnboarding } from './components/onboarding/OnboardingFlow';
+
 // Hooks
 import { useAnalysisFlow } from './hooks/useAnalysis';
 import { useExport } from './hooks/useExport';
@@ -35,6 +38,7 @@ function AppContent() {
   const { activeView, setActiveView, selectSNP } = useUI();
   const { runAnalysis } = useAnalysisFlow();
   const { exportCSV, exportJSON } = useExport();
+  const { showOnboarding, completeOnboarding } = useOnboarding();
 
   // Handle file selection
   const handleFileSelect = useCallback((file, fileType) => {
@@ -77,8 +81,16 @@ function AppContent() {
   const currentView = getView();
 
   return (
-    <AppShell onExport={handleExport}>
-      <AnimatePresence mode="wait">
+    <>
+      {/* Onboarding Flow */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingFlow onComplete={completeOnboarding} />
+        )}
+      </AnimatePresence>
+
+      <AppShell onExport={handleExport}>
+        <AnimatePresence mode="wait">
         {currentView === 'upload' && (
           <motion.div
             key="upload"
@@ -124,8 +136,9 @@ function AppContent() {
             />
           </motion.div>
         )}
-      </AnimatePresence>
-    </AppShell>
+        </AnimatePresence>
+      </AppShell>
+    </>
   );
 }
 

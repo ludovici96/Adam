@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { ArrowRight, RotateCcw } from 'lucide-react';
 import { SummaryCards } from './SummaryCards';
 import { QuickInsights } from './QuickInsights';
+import { HealthRisks } from './HealthRisks';
+import { DrugInteractions } from './DrugInteractions';
 import { Button } from '../common/Button';
 import { useAnalysis } from '../../context/AnalysisContext';
 import { useApp } from '../../context/AppContext';
@@ -75,6 +77,12 @@ export function Dashboard({ onViewReport, onReset, onSelectSNP }) {
           maxItems={5}
           onSelectSNP={onSelectSNP}
         />
+      </motion.div>
+
+      {/* Health Risks & Drug Interactions Grid */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <HealthRisks />
+        <DrugInteractions />
       </motion.div>
 
       {/* Actions */}

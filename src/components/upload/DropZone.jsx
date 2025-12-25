@@ -2,7 +2,15 @@ import React, { useCallback, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileText, Check, AlertCircle } from 'lucide-react';
 
-const ACCEPTED_EXTENSIONS = ['.vcf', '.csv', '.txt'];
+const ACCEPTED_EXTENSIONS = ['.vcf', '.csv', '.txt', '.zip'];
+
+const SUPPORTED_PROVIDERS = [
+  { name: '23andMe', color: 'text-cyan-500 dark:text-cyan-400' },
+  { name: 'AncestryDNA', color: 'text-orange-500 dark:text-orange-400' },
+  { name: 'FTDNA', color: 'text-blue-500 dark:text-blue-400' },
+  { name: 'MyHeritage', color: 'text-purple-500 dark:text-purple-400' },
+  { name: 'VCF', color: 'text-emerald-500 dark:text-emerald-400' }
+];
 
 export function DropZone({ onFileSelect, disabled = false }) {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -42,15 +50,15 @@ export function DropZone({ onFileSelect, disabled = false }) {
     }
 
     const extension = file.name.split('.').pop().toLowerCase();
-    const fileType = extension === 'csv' ? 'csv' : 'vcf';
 
     setSelectedFile({
       name: file.name,
       size: file.size,
-      type: fileType
+      type: extension.toUpperCase()
     });
 
-    onFileSelect(file, fileType);
+    // Pass file only - ParserFactory will auto-detect format
+    onFileSelect(file);
   }, [validateFile, onFileSelect]);
 
   const handleDragOver = useCallback((e) => {
@@ -157,14 +165,14 @@ export function DropZone({ onFileSelect, disabled = false }) {
             Drag and drop your file, or click to browse
           </p>
 
-          {/* Supported formats */}
+          {/* Supported providers */}
           <div className="flex flex-wrap justify-center gap-2">
-            {['VCF', 'CSV', 'TXT'].map((format) => (
+            {SUPPORTED_PROVIDERS.map((provider) => (
               <span
-                key={format}
-                className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[var(--text-secondary)]"
+                key={provider.name}
+                className={`px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 ${provider.color}`}
               >
-                .{format.toLowerCase()}
+                {provider.name}
               </span>
             ))}
           </div>

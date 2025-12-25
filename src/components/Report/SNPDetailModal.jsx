@@ -1,11 +1,31 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { clsx } from 'clsx';
-import { ExternalLink, AlertTriangle, ThumbsUp, Minus, MapPin, Activity } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ExternalLink,
+  AlertTriangle,
+  ThumbsUp,
+  Minus,
+  MapPin,
+  Activity,
+  Copy,
+  Check,
+  Share2,
+  BookOpen,
+  Link2,
+  Dna,
+  ChevronRight
+} from 'lucide-react';
 import { Modal, ModalFooter } from '../common/Modal';
 import { Button } from '../common/Button';
 import { MagnitudeBadge, CategoryBadge, ReputeBadge } from '../common/Badge';
+import { useAnalysis } from '../../context/AnalysisContext';
 
-export function SNPDetailModal({ match, isOpen, onClose }) {
+export function SNPDetailModal({ match, isOpen, onClose, onSelectSNP }) {
+  const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const { matches } = useAnalysis();
+
   if (!match) return null;
 
   const {
@@ -20,6 +40,56 @@ export function SNPDetailModal({ match, isOpen, onClose }) {
   } = match;
 
   const snpediaUrl = rsid ? `https://www.snpedia.com/index.php/${rsid}` : null;
+  const ncbiUrl = rsid ? `https://www.ncbi.nlm.nih.gov/snp/${rsid}` : null;
+  const clinvarUrl = rsid ? `https://www.ncbi.nlm.nih.gov/clinvar/?term=${rsid}` : null;
+
+  // Find related SNPs (same chromosome, nearby position, or similar category)
+  const relatedSNPs = useMemo(() => {
+    if (!matches || !chrom) return [];
+    return matches
+      .filter(m =>
+        m.rsid !== rsid && (
+          m.chrom === chrom ||
+          m.category === category
+        )
+      )
+      .sort((a, b) => (b.magnitude || 0) - (a.magnitude || 0))
+      .slice(0, 5);
+  }, [matches, rsid, chrom, category]);
+
+  const handleCopyRSID = async () => {
+    try {
+      await navigator.clipboard.writeText(rsid);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareText = `${rsid} - Genotype: ${userGenotype}\n${summary || 'No summary'}\n\nView on SNPedia: ${snpediaUrl}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `DNA Finding: ${rsid}`,
+          text: shareText
+        });
+      } catch (err) {
+        // User cancelled or share failed
+      }
+    } else {
+      // Fallback to clipboard
+      try {
+        await navigator.clipboard.writeText(shareText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+  };
 
   const getReputeInfo = () => {
     switch (repute) {
@@ -61,126 +131,337 @@ export function SNPDetailModal({ match, isOpen, onClose }) {
     return 'Very low or no clinical significance';
   };
 
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'resources', label: 'Resources' },
+    { id: 'related', label: `Related (${relatedSNPs.length})` }
+  ];
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={
         <div className="flex items-center gap-3">
-          <code className="text-xl font-mono">{rsid}</code>
+          <div className="flex items-center gap-2">
+            <code className="text-xl font-mono">{rsid}</code>
+            <button
+              onClick={handleCopyRSID}
+              className={clsx(
+                'p-1.5 rounded-lg transition-colors',
+                'hover:bg-gray-200 dark:hover:bg-white/10',
+                'text-[var(--text-secondary)]'
+              )}
+              title="Copy RSID"
+            >
+              {copied ? (
+                <Check className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </button>
+          </div>
           <MagnitudeBadge magnitude={magnitude} />
         </div>
       }
       size="lg"
     >
       <div className="space-y-6">
-        {/* Genotype and Location */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className={clsx(
-            'p-4 rounded-xl',
-            'bg-white/5 border border-white/10'
-          )}>
-            <div className="flex items-center gap-2 text-[var(--text-secondary)] mb-2">
-              <Activity className="w-4 h-4" />
-              <span className="text-sm">Your Genotype</span>
-            </div>
-            <p className="text-2xl font-mono font-bold text-[var(--text-primary)]">
-              {userGenotype || 'Unknown'}
-            </p>
-          </div>
-
-          <div className={clsx(
-            'p-4 rounded-xl',
-            'bg-white/5 border border-white/10'
-          )}>
-            <div className="flex items-center gap-2 text-[var(--text-secondary)] mb-2">
-              <MapPin className="w-4 h-4" />
-              <span className="text-sm">Chromosome Location</span>
-            </div>
-            <p className="text-lg font-mono text-[var(--text-primary)]">
-              {chrom ? `Chr${chrom}` : 'Unknown'}
-              {pos && `:${pos.toLocaleString()}`}
-            </p>
-          </div>
-        </div>
-
-        {/* Repute Card */}
-        <div className={clsx(
-          'p-4 rounded-xl',
-          reputeInfo.bg,
-          'border border-white/10'
-        )}>
-          <div className="flex items-start gap-4">
-            <div className={clsx(
-              'p-3 rounded-xl',
-              'bg-white/10'
-            )}>
-              <ReputeIcon className={clsx('w-6 h-6', reputeInfo.color)} />
-            </div>
-            <div>
-              <h4 className={clsx(
-                'text-lg font-semibold',
-                reputeInfo.color
-              )}>
-                {reputeInfo.label}
-              </h4>
-              <p className="text-sm text-[var(--text-secondary)] mt-1">
-                {reputeInfo.description}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Magnitude Explanation */}
-        <div className={clsx(
-          'p-4 rounded-xl',
-          'bg-white/5 border border-white/10'
-        )}>
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium text-[var(--text-primary)]">
-              Magnitude Score
-            </h4>
-            <MagnitudeBadge magnitude={magnitude} size="lg" />
-          </div>
-          <p className="text-sm text-[var(--text-secondary)]">
-            {getMagnitudeDescription(magnitude)}
-          </p>
-          <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
-            <div
+        {/* Tabs */}
+        <div className="flex gap-2 border-b border-gray-200 dark:border-white/10 -mx-6 px-6">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               className={clsx(
-                'h-full rounded-full',
-                'bg-gradient-to-r from-emerald-500 via-yellow-500 to-red-500'
+                'px-4 py-2 text-sm font-medium transition-colors relative',
+                activeTab === tab.id
+                  ? 'text-cyan-500'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
-              style={{ width: `${Math.min(magnitude / 5 * 100, 100)}%` }}
-            />
-          </div>
-          <div className="flex justify-between mt-1 text-xs text-[var(--text-secondary)]">
-            <span>0</span>
-            <span>5+</span>
-          </div>
+            >
+              {tab.label}
+              {activeTab === tab.id && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-500"
+                />
+              )}
+            </button>
+          ))}
         </div>
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'overview' && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              {/* Genotype and Location */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className={clsx(
+                  'p-4 rounded-xl',
+                  'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10'
+                )}>
+                  <div className="flex items-center gap-2 text-[var(--text-secondary)] mb-2">
+                    <Activity className="w-4 h-4" />
+                    <span className="text-sm">Your Genotype</span>
+                  </div>
+                  <p className="text-2xl font-mono font-bold text-[var(--text-primary)]">
+                    {userGenotype || 'Unknown'}
+                  </p>
+                </div>
 
-        {/* Summary */}
-        <div>
-          <h4 className="font-medium text-[var(--text-primary)] mb-2">
-            Description
-          </h4>
-          <p className="text-[var(--text-secondary)] leading-relaxed">
-            {summary || 'No detailed description available for this variant.'}
-          </p>
-        </div>
+                <div className={clsx(
+                  'p-4 rounded-xl',
+                  'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10'
+                )}>
+                  <div className="flex items-center gap-2 text-[var(--text-secondary)] mb-2">
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm">Chromosome Location</span>
+                  </div>
+                  <p className="text-lg font-mono text-[var(--text-primary)]">
+                    {chrom ? `Chr${chrom}` : 'Unknown'}
+                    {pos && `:${pos.toLocaleString()}`}
+                  </p>
+                </div>
+              </div>
 
-        {/* Category */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-[var(--text-secondary)]">Category:</span>
-          <CategoryBadge category={category} />
-        </div>
+              {/* Repute Card */}
+              <div className={clsx(
+                'p-4 rounded-xl',
+                reputeInfo.bg,
+                'border border-gray-200 dark:border-white/10'
+              )}>
+                <div className="flex items-start gap-4">
+                  <div className={clsx(
+                    'p-3 rounded-xl',
+                    'bg-white/20 dark:bg-white/10'
+                  )}>
+                    <ReputeIcon className={clsx('w-6 h-6', reputeInfo.color)} />
+                  </div>
+                  <div>
+                    <h4 className={clsx(
+                      'text-lg font-semibold',
+                      reputeInfo.color
+                    )}>
+                      {reputeInfo.label}
+                    </h4>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">
+                      {reputeInfo.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-        {/* Disclaimer */}
+              {/* Magnitude Explanation */}
+              <div className={clsx(
+                'p-4 rounded-xl',
+                'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10'
+              )}>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-[var(--text-primary)]">
+                    Magnitude Score
+                  </h4>
+                  <MagnitudeBadge magnitude={magnitude} size="lg" />
+                </div>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {getMagnitudeDescription(magnitude)}
+                </p>
+                <div className="mt-3 h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
+                  <div
+                    className={clsx(
+                      'h-full rounded-full',
+                      'bg-gradient-to-r from-emerald-500 via-yellow-500 to-red-500'
+                    )}
+                    style={{ width: `${Math.min(magnitude / 5 * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1 text-xs text-[var(--text-secondary)]">
+                  <span>0</span>
+                  <span>5+</span>
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div>
+                <h4 className="font-medium text-[var(--text-primary)] mb-2">
+                  Description
+                </h4>
+                <p className="text-[var(--text-secondary)] leading-relaxed">
+                  {summary || 'No detailed description available for this variant.'}
+                </p>
+              </div>
+
+              {/* Category */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-[var(--text-secondary)]">Category:</span>
+                <CategoryBadge category={category} />
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'resources' && (
+            <motion.div
+              key="resources"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-4"
+            >
+              <p className="text-sm text-[var(--text-secondary)]">
+                Learn more about this genetic variant from trusted scientific sources:
+              </p>
+
+              {/* External Links */}
+              <div className="space-y-3">
+                {snpediaUrl && (
+                  <a
+                    href={snpediaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={clsx(
+                      'flex items-center gap-4 p-4 rounded-xl',
+                      'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10',
+                      'hover:bg-gray-200 dark:hover:bg-white/10 transition-colors group'
+                    )}
+                  >
+                    <div className="p-2 rounded-lg bg-emerald-500/20">
+                      <BookOpen className="w-5 h-5 text-emerald-500" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-[var(--text-primary)]">SNPedia</div>
+                      <div className="text-xs text-[var(--text-secondary)]">
+                        Community-curated wiki for human genetics
+                      </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-cyan-500 transition-colors" />
+                  </a>
+                )}
+
+                {ncbiUrl && (
+                  <a
+                    href={ncbiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={clsx(
+                      'flex items-center gap-4 p-4 rounded-xl',
+                      'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10',
+                      'hover:bg-gray-200 dark:hover:bg-white/10 transition-colors group'
+                    )}
+                  >
+                    <div className="p-2 rounded-lg bg-blue-500/20">
+                      <Dna className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-[var(--text-primary)]">dbSNP (NCBI)</div>
+                      <div className="text-xs text-[var(--text-secondary)]">
+                        Official NIH SNP database
+                      </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-cyan-500 transition-colors" />
+                  </a>
+                )}
+
+                {clinvarUrl && (
+                  <a
+                    href={clinvarUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={clsx(
+                      'flex items-center gap-4 p-4 rounded-xl',
+                      'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10',
+                      'hover:bg-gray-200 dark:hover:bg-white/10 transition-colors group'
+                    )}
+                  >
+                    <div className="p-2 rounded-lg bg-purple-500/20">
+                      <Activity className="w-5 h-5 text-purple-500" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-[var(--text-primary)]">ClinVar</div>
+                      <div className="text-xs text-[var(--text-secondary)]">
+                        Clinical significance database
+                      </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-cyan-500 transition-colors" />
+                  </a>
+                )}
+              </div>
+
+              {/* Share Button */}
+              <div className="pt-4 border-t border-gray-200 dark:border-white/10">
+                <button
+                  onClick={handleShare}
+                  className={clsx(
+                    'flex items-center gap-3 w-full p-4 rounded-xl',
+                    'bg-cyan-500/10 border border-cyan-500/20',
+                    'hover:bg-cyan-500/20 transition-colors'
+                  )}
+                >
+                  <Share2 className="w-5 h-5 text-cyan-500" />
+                  <span className="font-medium text-cyan-500">Share this finding</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'related' && (
+            <motion.div
+              key="related"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-4"
+            >
+              {relatedSNPs.length > 0 ? (
+                <>
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    Other findings on chromosome {chrom} or in the {category || 'same'} category:
+                  </p>
+                  <div className="space-y-2">
+                    {relatedSNPs.map((snp, i) => (
+                      <button
+                        key={snp.rsid}
+                        onClick={() => {
+                          onClose();
+                          onSelectSNP?.(snp);
+                        }}
+                        className={clsx(
+                          'w-full flex items-center gap-4 p-4 rounded-xl text-left',
+                          'bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10',
+                          'hover:bg-gray-200 dark:hover:bg-white/10 transition-colors group'
+                        )}
+                      >
+                        <MagnitudeBadge magnitude={snp.magnitude} />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-mono text-sm text-cyan-500">{snp.rsid}</div>
+                          <div className="text-xs text-[var(--text-secondary)] truncate">
+                            {snp.summary?.slice(0, 60) || 'No summary'}
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-cyan-500 transition-colors" />
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8 text-[var(--text-secondary)]">
+                  <Dna className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No related findings found</p>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Disclaimer - Always visible */}
         <div className={clsx(
           'p-4 rounded-xl',
           'bg-amber-500/10 border border-amber-500/20',
-          'text-sm text-amber-300'
+          'text-sm text-amber-600 dark:text-amber-300'
         )}>
           <strong>Disclaimer:</strong> This information is for educational purposes only.
           Genetic variants should be interpreted by qualified healthcare professionals
