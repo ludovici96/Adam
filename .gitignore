@@ -38,6 +38,7 @@ yarn-error.log*
 *.vcf
 *.csv
 *.txt
+*.md
 !README.txt
 
 # Large database files (can be regenerated)
