@@ -75,10 +75,23 @@ export class Matcher {
             }
         }
 
-        matches.sort((a, b) => b.magnitude - a.magnitude);
-        stats.totalMatches = matches.length;
+        // Deduplicate matches by RSID (keep highest magnitude for each)
+        const uniqueMatches = [];
+        const seenRsids = new Set();
 
-        return { matches, stats };
+        // Sort by magnitude first so we keep the highest magnitude match for each RSID
+        matches.sort((a, b) => b.magnitude - a.magnitude);
+
+        for (const match of matches) {
+            if (!seenRsids.has(match.rsid)) {
+                seenRsids.add(match.rsid);
+                uniqueMatches.push(match);
+            }
+        }
+
+        stats.totalMatches = uniqueMatches.length;
+
+        return { matches: uniqueMatches, stats };
     }
 
     reverseComplement(genotype) {
