@@ -1,0 +1,104 @@
+{
+    "rs6152": {
+        "chrom": "20",
+        "pos": 123456,
+        "summary": "Baldness risk",
+        "category": "traits",
+        "genotypes": {
+            "GG": {
+                "magnitude": 2.5,
+                "repute": "bad",
+                "summary": "Higher risk of male pattern baldness"
+            },
+            "GA": {
+                "magnitude": 1,
+                "repute": "neutral",
+                "summary": "Average risk"
+            },
+            "AA": {
+                "magnitude": 2,
+                "repute": "good",
+                "summary": "Lower risk of baldness"
+            }
+        }
+    },
+    "rs1815739": {
+        "chrom": "11",
+        "pos": 234567,
+        "summary": "Muscle performance (ACTN3)",
+        "category": "traits",
+        "genotypes": {
+            "CC": {
+                "magnitude": 2,
+                "repute": "good",
+                "summary": "Sprinter gene present"
+            },
+            "CT": {
+                "magnitude": 1,
+                "repute": "neutral",
+                "summary": "Mixed muscle type"
+            },
+            "TT": {
+                "magnitude": 1.5,
+                "repute": "neutral",
+                "summary": "Endurance athlete advantage"
+            }
+        }
+    },
+    "rs4680": {
+        "chrom": "22",
+        "pos": 345678,
+        "summary": "COMT: Warrior vs Worrier",
+        "category": "health",
+        "genotypes": {
+            "AA": {
+                "magnitude": 2.5,
+                "repute": "neutral",
+                "summary": "Worrier: higher dopamine, better memory/attention, lower pain threshold"
+            },
+            "AG": {
+                "magnitude": 1,
+                "repute": "neutral",
+                "summary": "Intermediate dopamine levels"
+            },
+            "GG": {
+                "magnitude": 2.5,
+                "repute": "neutral",
+                "summary": "Warrior: lower dopamine, better stress resilience, higher pain threshold"
+            }
+        }
+    },
+    "rs_simulated_Y": {
+        "chrom": "Y",
+        "pos": 2781653,
+        "summary": "Y-DNA Marker (Simulated)",
+        "category": "ancestry",
+        "genotypes": {
+            "G": {
+                "magnitude": 1,
+                "repute": "neutral",
+                "summary": "Marker present (Simulated Match)"
+            },
+            "A": {
+                "magnitude": 1,
+                "repute": "neutral",
+                "summary": "Marker variant"
+            },
+            "C": {
+                "magnitude": 1,
+                "repute": "neutral",
+                "summary": "Marker variant"
+            },
+            "T": {
+                "magnitude": 1,
+                "repute": "neutral",
+                "summary": "Marker variant"
+            },
+            "GG": {
+                "magnitude": 1,
+                "repute": "neutral",
+                "summary": "Marker present (Simulated Match)"
+            }
+        }
+    }
+}
