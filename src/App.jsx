@@ -5,11 +5,11 @@ import { AppProvider, useApp } from './context/AppContext';
 import { AnalysisProvider, useAnalysis } from './context/AnalysisContext';
 import { UIProvider, useUI } from './context/UIContext';
 
-import { AppShell } from './components/layout/AppShell';
+import { AppShell } from './components/Layout/AppShell';
 
 import { UploadView } from './components/upload/UploadView';
-import { Dashboard } from './components/dashboard/Dashboard';
-import { ReportView } from './components/report/ReportView';
+import { Dashboard } from './components/Dashboard/Dashboard';
+import { ReportView } from './components/Report/ReportView';
 import { CompareView } from './components/compare/CompareView';
 
 import { OnboardingFlow, useOnboarding } from './components/onboarding/OnboardingFlow';
