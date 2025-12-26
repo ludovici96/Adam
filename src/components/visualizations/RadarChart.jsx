@@ -23,7 +23,7 @@ export function RadarChart({
 }) {
   const mergedColors = { ...DEFAULT_COLORS, ...colors };
   const center = size / 2;
-  const radius = (size / 2) - 40; // Leave room for labels
+  const radius = (size / 2) - 60; // Leave more room for labels to prevent clipping
 
   const angleSlice = useMemo(() => (Math.PI * 2) / data.length, [data.length]);
 

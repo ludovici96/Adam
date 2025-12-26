@@ -22,12 +22,28 @@ const MBTI_TRAIT_DATABASE = {
     description: 'How you direct and receive energy',
     snps: [
       {
+        rsid: 'rs53576',
+        gene: 'OXTR',
+        traitAllele: 'G',
+        direction: 'E',
+        weight: 0.8,
+        reference: 'G allele linked to higher sociability and social seeking'
+      },
+      {
+        rsid: 'rs4680',
+        gene: 'COMT',
+        traitAllele: 'A',
+        direction: 'I',
+        weight: 0.6,
+        reference: 'Met (A) carriers associated with higher worry/introversion'
+      },
+      {
         rsid: 'rs1800497',
-        gene: 'DRD2/ANKK1',
+        gene: 'DRD2',
         traitAllele: 'A',
         direction: 'E',
-        weight: 1.2,
-        reference: 'A1 allele associated with higher extraversion'
+        weight: 0.5,
+        reference: 'Reward-seeking behavior linked to extraversion'
       },
       {
         rsid: 'rs6265',
@@ -42,8 +58,8 @@ const MBTI_TRAIT_DATABASE = {
         gene: 'DRD4',
         traitAllele: 'T',
         direction: 'E',
-        weight: 0.8,
-        reference: 'Associated with novelty seeking, social engagement'
+        weight: 0.6,
+        reference: 'Associated with social engagement'
       }
     ]
   },
@@ -58,8 +74,8 @@ const MBTI_TRAIT_DATABASE = {
         gene: 'COMT',
         traitAllele: 'A',
         direction: 'N',
-        weight: 1.3,
-        reference: 'Met/Met associated with deeper cognitive processing'
+        weight: 1.2,
+        reference: 'Met/Met associated with deeper cognitive processing (Intuition)'
       },
       {
         rsid: 'rs17070145',
@@ -82,8 +98,8 @@ const MBTI_TRAIT_DATABASE = {
         gene: 'OXTR',
         traitAllele: 'G',
         direction: 'F',
-        weight: 1.4,
-        reference: 'GG genotype associated with higher empathy'
+        weight: 1.5,
+        reference: 'GG genotype strongly associated with higher empathy (Feeling)'
       },
       {
         rsid: 'rs2254298',
@@ -114,8 +130,24 @@ const MBTI_TRAIT_DATABASE = {
         gene: 'COMT',
         traitAllele: 'G',
         direction: 'J',
+        weight: 1.0,
+        reference: 'Val/Val warriors tend toward structure and resilience (Judging)'
+      },
+      {
+        rsid: 'rs1800955',
+        gene: 'DRD4',
+        traitAllele: 'T',
+        direction: 'P',
         weight: 1.2,
-        reference: 'Val/Val warriors tend toward structure'
+        reference: 'Novelty seeking is a core Perceiving trait'
+      },
+      {
+        rsid: 'rs1800497',
+        gene: 'DRD2',
+        traitAllele: 'A',
+        direction: 'P',
+        weight: 0.8,
+        reference: 'Impulsivity linked to Perceiving nature'
       },
       {
         rsid: 'rs25531',

@@ -39,7 +39,6 @@ yarn-error.log*
 *.csv
 *.txt
 !README.txt
-clinvar.json
 clinvar.vcf.gz
 *.zip
 

@@ -39,12 +39,12 @@ export function EmotionalRadar() {
   return (
     <motion.div variants={itemVariants}>
       <div className={clsx(
-        'p-6 rounded-2xl',
+        'p-5 rounded-2xl',
         'bg-gray-50 dark:bg-white/5 backdrop-blur-sm',
         'border border-gray-200 dark:border-white/10'
       )}>
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20">
               <Brain className="w-5 h-5 text-amber-600 dark:text-amber-400" />
@@ -64,7 +64,7 @@ export function EmotionalRadar() {
         </div>
 
         {/* Radar Chart */}
-        <div className="mb-6">
+        <div className="mb-4">
           <RadarChart
             data={radarData}
             size={280}
@@ -75,14 +75,14 @@ export function EmotionalRadar() {
         </div>
 
         {/* MBTI Type Display */}
-        <div className="text-center mb-6 py-4 rounded-xl bg-white/5 dark:bg-black/10">
+        <div className="text-center mb-4 py-3 rounded-xl bg-white/5 dark:bg-black/10">
           <div className="flex items-center justify-center gap-2 mb-1">
             <Sparkles className="w-4 h-4 text-amber-500" />
             <span className="text-xs uppercase tracking-wider text-[var(--text-secondary)]">
               Personality Type
             </span>
           </div>
-          <div className="text-4xl font-bold font-serif text-[var(--text-primary)] tracking-widest">
+          <div className="text-3xl font-bold font-serif text-[var(--text-primary)] tracking-widest">
             {mbtiType}
           </div>
           <div className="text-sm text-[var(--text-secondary)] mt-1 font-medium">
@@ -121,7 +121,7 @@ export function EmotionalRadar() {
               >
                 <button
                   onClick={() => setExpandedDimension(isExpanded ? null : key)}
-                  className="w-full p-3 flex items-center justify-between text-left"
+                  className="w-full p-2 flex items-center justify-between text-left"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -132,14 +132,14 @@ export function EmotionalRadar() {
                       <div className="text-sm font-medium text-[var(--text-primary)]">
                         {dim.polarLabels[0]} / {dim.polarLabels[1]}
                       </div>
-                      <div className="text-xs text-[var(--text-secondary)]">
+                      <div className="text-xs text-[var(--text-secondary)] line-clamp-1">
                         {dim.description}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <span className="text-xl font-bold font-serif text-[var(--text-primary)]">
+                      <span className="text-lg font-bold font-serif text-[var(--text-primary)]">
                         {dim.letter}
                       </span>
                       <span className="text-xs text-[var(--text-secondary)] ml-2">
