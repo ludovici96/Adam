@@ -49,10 +49,10 @@ async function start() {
         await databaseService.load();
 
         app.listen(PORT, () => {
-            console.log(`\n🚀 Server running on http://localhost:${PORT}`);
+            console.log(`\n Server running on http://localhost:${PORT}`);
             console.log(`   Health: http://localhost:${PORT}/api/health`);
             console.log(`   Stats:  http://localhost:${PORT}/api/stats`);
-            console.log(`\n📡 Ready to receive requests!\n`);
+            console.log(`\n Ready to receive requests!\n`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);
