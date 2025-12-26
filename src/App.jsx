@@ -75,6 +75,10 @@ function AppContent() {
 
   const currentView = getView();
 
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentView]);
+
   return (
     <>
       <AnimatePresence>
