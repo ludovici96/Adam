@@ -1,29 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Zap, Eye, Lock } from 'lucide-react';
+import { Shield, Zap, Eye, Lock, Server, Cloud } from 'lucide-react';
 import { DropZone } from './DropZone';
 import { ProcessingIndicator } from './ProcessingIndicator';
 import { useApp } from '../../context/AppContext';
 
-const features = [
-  {
-    icon: Lock,
-    title: '100% Private',
-    description: 'Your DNA never leaves your device'
-  },
-  {
-    icon: Zap,
-    title: 'Instant Analysis',
-    description: 'Results in seconds, not days'
-  },
-  {
-    icon: Eye,
-    title: '70,000+ SNPs',
-    description: 'Comprehensive SNPedia database'
-  }
-];
-
-export function UploadView({ onFileSelect }) {
+export function UploadView({ onFileSelect, useAPI, apiStats }) {
   const { appState, progress, APP_STATES } = useApp();
 
   const isProcessing = [
@@ -31,6 +13,29 @@ export function UploadView({ onFileSelect }) {
     APP_STATES.PARSING,
     APP_STATES.ANALYZING
   ].includes(appState);
+
+  // Dynamic features based on API availability
+  const snpCount = useAPI && apiStats?.totalCount
+    ? `${(apiStats.totalCount / 1000000).toFixed(1)}M+ SNPs`
+    : '70,000+ SNPs';
+
+  const features = [
+    {
+      icon: Lock,
+      title: '100% Private',
+      description: useAPI ? 'Self-hosted server' : 'Your DNA never leaves your device'
+    },
+    {
+      icon: Zap,
+      title: 'Instant Analysis',
+      description: 'Results in seconds, not days'
+    },
+    {
+      icon: useAPI ? Server : Eye,
+      title: snpCount,
+      description: useAPI ? 'SNPedia + ClinVar databases' : 'Comprehensive SNPedia database'
+    }
+  ];
 
   return (
     <div className="flex flex-col items-center">

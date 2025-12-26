@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAnalysis as useAnalysisContext } from '../context/AnalysisContext';
 import { useUI } from '../context/UIContext';
@@ -8,6 +8,7 @@ import { ParserFactory, FILE_FORMATS } from '../parsers/index.js';
 import { Matcher } from '../analysis/matcher';
 import { RiskCalculator } from '../analysis/RiskCalculator';
 import { PharmaAnalyzer } from '../analysis/PharmaAnalyzer';
+import { apiClient } from '../services/api';
 
 export function useAnalysisFlow() {
   const {
@@ -29,7 +30,72 @@ export function useAnalysisFlow() {
 
   const { setActiveView } = useUI();
 
-  const runAnalysis = useCallback(async (file, fileType) => {
+  const [useAPI, setUseAPI] = useState(null);
+  const [apiStats, setApiStats] = useState(null);
+
+  // Check API availability on mount
+  useEffect(() => {
+    apiClient.checkAvailability().then(available => {
+      setUseAPI(available);
+      if (available) {
+        apiClient.getStats().then(setApiStats).catch(() => { });
+      }
+    });
+  }, []);
+
+  const runAnalysisWithAPI = useCallback(async (file) => {
+    try {
+      setAppState(APP_STATES.PARSING);
+      setProgress({ stage: 'parsing', percent: 10, message: 'Uploading file to server...' });
+
+      setProgress({ stage: 'analyzing', percent: 30, message: 'Analyzing with server (2.4M SNPs)...' });
+
+      const result = await apiClient.analyzeFile(file);
+
+      setProgress({ percent: 70, message: 'Processing results...' });
+
+      setVariants([]); // Server doesn't return all variants
+      setMatches(result.matches);
+      setStats({
+        totalVariants: result.stats.totalVariants,
+        totalMatches: result.matches.length,
+        ...result.stats
+      });
+
+      setDatabaseInfo({
+        size: apiStats?.totalCount || result.stats.totalMatches,
+        source: 'server'
+      });
+
+      // Categorize matches
+      categorizeMatches(result.matches);
+
+      // Run health risk calculator on client
+      setProgress({ percent: 85, message: 'Calculating health risk scores...' });
+      const riskCalculator = new RiskCalculator();
+      const riskScores = riskCalculator.calculateAllRiskScores(result.matches);
+      setRiskScores(riskScores);
+
+      setProgress({ percent: 92, message: 'Analyzing drug interactions...' });
+      const pharmaAnalyzer = new PharmaAnalyzer();
+      const pharmaResults = pharmaAnalyzer.analyze(result.matches);
+      setPharmaResults(pharmaResults);
+
+      setProgress({ percent: 100, message: 'Analysis complete!' });
+      setAppState(APP_STATES.COMPLETE);
+      setActiveView('dashboard');
+
+    } catch (error) {
+      console.error('API analysis failed:', error);
+      setError(error.message || 'Server analysis failed');
+    }
+  }, [
+    setAppState, setProgress, setError, setVariants, setMatches, setStats,
+    categorizeMatches, setDatabaseInfo, setRiskScores, setPharmaResults,
+    setActiveView, APP_STATES, apiStats
+  ]);
+
+  const runAnalysisLocal = useCallback(async (file, fileType) => {
     try {
       // Stage 1: Parsing with auto-detection
       setAppState(APP_STATES.PARSING);
@@ -65,7 +131,7 @@ export function useAnalysisFlow() {
       }
       const database = await dbResponse.json();
 
-      setDatabaseInfo({ size: Object.keys(database).length });
+      setDatabaseInfo({ size: Object.keys(database).length, source: 'local' });
       setProgress({ percent: 70, message: 'Matching variants...' });
 
       // Stage 3: Matching
@@ -125,7 +191,24 @@ export function useAnalysisFlow() {
     APP_STATES
   ]);
 
-  return { runAnalysis };
+  // Main analysis function - uses API if available, otherwise local
+  const runAnalysis = useCallback(async (file, fileType) => {
+    if (useAPI) {
+      console.log('Using server API for analysis (2.4M SNPs)');
+      return runAnalysisWithAPI(file);
+    } else {
+      console.log('Using local analysis (SNPedia only)');
+      return runAnalysisLocal(file, fileType);
+    }
+  }, [useAPI, runAnalysisWithAPI, runAnalysisLocal]);
+
+  return {
+    runAnalysis,
+    useAPI,
+    apiStats,
+    isCheckingAPI: useAPI === null
+  };
 }
 
 export default useAnalysisFlow;
+

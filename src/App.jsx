@@ -37,7 +37,7 @@ function AppContent() {
   const { appState, reset, setFile, APP_STATES } = useApp();
   const { reset: resetAnalysis } = useAnalysis();
   const { activeView, setActiveView, selectSNP } = useUI();
-  const { runAnalysis } = useAnalysisFlow();
+  const { runAnalysis, useAPI, apiStats } = useAnalysisFlow();
   const { exportCSV, exportJSON, exportPDF } = useExport();
   const { showOnboarding, completeOnboarding } = useOnboarding();
 
@@ -108,7 +108,7 @@ function AppContent() {
               exit="exit"
               transition={pageTransition}
             >
-              <UploadView onFileSelect={handleFileSelect} />
+              <UploadView onFileSelect={handleFileSelect} useAPI={useAPI} apiStats={apiStats} />
             </motion.div>
           )}
 
