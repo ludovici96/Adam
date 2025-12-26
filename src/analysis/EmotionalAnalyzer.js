@@ -3,7 +3,7 @@
  * V5: Identity-First Architecture (Titles & Text)
  */
 
-const NEUROCHEMISTRY_DATABASE = {
+export const NEUROCHEMISTRY_DATABASE = {
   dopamine: {
     label: 'The Spark',
     shortLabel: 'Spark',

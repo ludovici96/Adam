@@ -13,6 +13,7 @@ const DEFAULT_COLORS = {
 
 export function RadarChart({
   data,
+  secondaryData,
   size = 280,
   levels = 5,
   colors = {},
@@ -27,25 +28,34 @@ export function RadarChart({
 
   const angleSlice = useMemo(() => (Math.PI * 2) / data.length, [data.length]);
 
-  // Calculate polygon points based on data values
-  const points = useMemo(() => {
-    return data.map((d, i) => {
-      const angle = angleSlice * i - Math.PI / 2; // Start from top
+  // Helper: Calculate points for a dataset
+  const calculatePoints = (dataset) => {
+    if (!dataset) return [];
+    return dataset.map((d, i) => {
+      const angle = angleSlice * i - Math.PI / 2;
       const r = d.value * radius;
       return {
         x: center + r * Math.cos(angle),
         y: center + r * Math.sin(angle)
       };
     });
-  }, [data, angleSlice, radius, center]);
+  };
 
-  // Create SVG path string for the polygon
-  const pathD = useMemo(() => {
-    if (points.length === 0) return '';
-    return points.map((p, i) =>
+  // Helper: Create SVG path
+  const createPath = (datasetPoints) => {
+    if (!datasetPoints || datasetPoints.length === 0) return '';
+    return datasetPoints.map((p, i) =>
       `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`
     ).join(' ') + ' Z';
-  }, [points]);
+  }
+
+  // Calculate polygon points based on data values
+  const points = useMemo(() => calculatePoints(data), [data, angleSlice, radius, center]);
+  const secondaryPoints = useMemo(() => calculatePoints(secondaryData), [secondaryData, angleSlice, radius, center]);
+
+  // Create SVG path string for the polygon
+  const pathD = useMemo(() => createPath(points), [points]);
+  const secondaryPathD = useMemo(() => createPath(secondaryPoints), [secondaryPoints]);
 
   // Calculate axis end points (at full radius)
   const axisEndPoints = useMemo(() => {
@@ -107,7 +117,7 @@ export function RadarChart({
         />
       ))}
 
-      {/* Data polygon with animation */}
+      {/* Primary Data Polygon */}
       <motion.path
         d={pathD}
         fill={mergedColors.fill}
@@ -120,7 +130,22 @@ export function RadarChart({
         transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
       />
 
-      {/* Data points at vertices */}
+      {/* Secondary Data Polygon (Ghost Chart) */}
+      {secondaryData && secondaryPathD && (
+        <motion.path
+          d={secondaryPathD}
+          fill="none"
+          stroke={colors.secondaryStroke || '#2D8B7A'} // Teal (Guanine/Innovation)
+          strokeWidth={2}
+          strokeDasharray="4 2" // Dashed line for ghost effect
+          strokeLinejoin="round"
+          initial={animated ? { pathLength: 0, opacity: 0 } : false}
+          animate={{ pathLength: 1, opacity: 0.6 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
+        />
+      )}
+
+      {/* Primary Data points at vertices */}
       {points.map((point, i) => (
         <motion.circle
           key={`point-${i}`}
@@ -133,6 +158,22 @@ export function RadarChart({
           initial={animated ? { scale: 0, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.8 + i * 0.1, duration: 0.2 }}
+        />
+      ))}
+
+      {/* Secondary Data points at vertices (Smaller, less prominent) */}
+      {secondaryPoints && secondaryPoints.map((point, i) => (
+        <motion.circle
+          key={`sec-point-${i}`}
+          cx={point.x}
+          cy={point.y}
+          r={3}
+          fill={colors.secondaryPoints || '#5EEAD4'} // Teal-300
+          stroke="white"
+          strokeWidth={1.5}
+          initial={animated ? { scale: 0, opacity: 0 } : false}
+          animate={{ scale: 1, opacity: 0.8 }}
+          transition={{ delay: 1.0 + i * 0.1, duration: 0.2 }}
         />
       ))}
 

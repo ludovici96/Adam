@@ -26,6 +26,7 @@ const initialState = {
   riskScores: [],
   pharmaResults: null,
   emotionalProfile: null,
+  partnerEmotionalProfile: null,
   haplogroups: {
     yDNA: null,
     mtDNA: null
@@ -43,6 +44,7 @@ const ACTIONS = {
   SET_RISK_SCORES: 'SET_RISK_SCORES',
   SET_PHARMA_RESULTS: 'SET_PHARMA_RESULTS',
   SET_EMOTIONAL_PROFILE: 'SET_EMOTIONAL_PROFILE',
+  SET_PARTNER_EMOTIONAL_PROFILE: 'SET_PARTNER_EMOTIONAL_PROFILE',
   SET_HAPLOGROUPS: 'SET_HAPLOGROUPS',
   SET_DATABASE_INFO: 'SET_DATABASE_INFO',
   RESET: 'RESET'
@@ -93,6 +95,12 @@ function analysisReducer(state, action) {
       return {
         ...state,
         emotionalProfile: action.payload
+      };
+
+    case ACTIONS.SET_PARTNER_EMOTIONAL_PROFILE:
+      return {
+        ...state,
+        partnerEmotionalProfile: action.payload
       };
 
     case ACTIONS.SET_HAPLOGROUPS:
@@ -237,6 +245,7 @@ export function AnalysisProvider({ children }) {
     setHaplogroups,
     setDatabaseInfo,
     categorizeMatches,
+    setPartnerEmotionalProfile: (profile) => dispatch({ type: ACTIONS.SET_PARTNER_EMOTIONAL_PROFILE, payload: profile }),
     reset
   };
 
