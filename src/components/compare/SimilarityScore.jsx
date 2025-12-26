@@ -3,23 +3,37 @@ import { motion } from 'framer-motion';
 import { Percent, CheckCircle, XCircle, FileDiff } from 'lucide-react';
 import { clsx } from 'clsx';
 
-export function SimilarityScore({ identityRate, stats }) {
-    const percentage = Math.round(identityRate * 100);
+export function SimilarityScore({ stats }) {
+    // We prioritize Compatibility Rate (Shared Alleles) for the main score
+    // as it's more meaningful for relationships.
+    const percentage = Math.round((stats.compatibilityRate || 0) * 100);
+    const identityPct = Math.round((stats.identityRate || 0) * 100);
 
     let interpretation = '';
     let color = '';
 
-    if (percentage >= 99.9) {
-        interpretation = 'Identical DNA';
-        color = 'text-emerald-500';
+    // Logic for interpretation
+    if (percentage >= 99) {
+        if (identityPct >= 99) {
+            interpretation = 'Identical Genomes (Self/Twin)';
+            color = 'text-emerald-500';
+        } else if (identityPct >= 45) {
+            // Parent/Child is usually 100% compatible (shared alleles)
+            // Sibling is also high compatibility but might have some mismatches?
+            // Actually sibling can have AA vs GG (25% chance if parents are AG x AG) -> mismatch.
+            // Parent/Child NEVER has mismatch (except mutation).
+            // So if Compatibility ~100% and Identity < 100%, it's likely Parent/Child.
+            interpretation = 'Parent/Child Relationship';
+            color = 'text-blue-500';
+        } else {
+            interpretation = 'Highly Related';
+            color = 'text-blue-500';
+        }
     } else if (percentage >= 50) {
-        interpretation = 'Parent/Child or Sibling';
-        color = 'text-blue-500';
-    } else if (percentage >= 25) {
-        interpretation = 'Grandparent/Grandchild or Aunt/Uncle';
+        interpretation = 'Sibling or Close Relative';
         color = 'text-cyan-500';
-    } else if (percentage >= 12.5) {
-        interpretation = 'First Cousin';
+    } else if (percentage >= 25) {
+        interpretation = 'Extended Family';
         color = 'text-purple-500';
     } else {
         interpretation = 'Distant or Unrelated';
@@ -60,7 +74,7 @@ export function SimilarityScore({ identityRate, stats }) {
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                         <span className={clsx("text-3xl font-bold", color)}>{percentage}%</span>
-                        <span className="text-xs text-[var(--text-secondary)]">Shared</span>
+                        <span className="text-xs text-[var(--text-secondary)]">Match</span>
                     </div>
                 </div>
 
@@ -73,34 +87,41 @@ export function SimilarityScore({ identityRate, stats }) {
                         Based on {stats.totalCompared.toLocaleString()} comparable SNPs
                     </p>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                         <StatCard
                             icon={CheckCircle}
-                            label="Identical"
+                            label="Exact Match"
                             value={stats.identical}
                             color="text-emerald-500"
                             bg="bg-emerald-500/10"
                         />
                         <StatCard
+                            icon={CheckCircle}
+                            label="Partial Match"
+                            value={stats.partial}
+                            color="text-blue-500"
+                            bg="bg-blue-500/10"
+                        />
+                        <StatCard
                             icon={XCircle}
-                            label="Different"
+                            label="Mismatch"
                             value={stats.different}
                             color="text-red-500"
                             bg="bg-red-500/10"
                         />
                         <StatCard
                             icon={FileDiff}
-                            label="Unique to File 1"
+                            label="Unique File 1"
                             value={stats.unique1}
-                            color="text-blue-500"
-                            bg="bg-blue-500/10"
+                            color="text-gray-500"
+                            bg="bg-gray-500/10"
                         />
                         <StatCard
                             icon={FileDiff}
-                            label="Unique to File 2"
+                            label="Unique File 2"
                             value={stats.unique2}
-                            color="text-purple-500"
-                            bg="bg-purple-500/10"
+                            color="text-gray-500"
+                            bg="bg-gray-500/10"
                         />
                     </div>
                 </div>

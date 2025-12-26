@@ -4,14 +4,15 @@ import { clsx } from 'clsx';
 import { ChevronDown, AlertTriangle } from 'lucide-react';
 import { MagnitudeBadge, ReputeBadge } from '../common/Badge';
 
-export function DiffViewer({ shared, different, unique1, unique2 }) {
-    const [activeTab, setActiveTab] = useState('different');
+export function DiffViewer({ exact, partial, mismatch, unique1, unique2 }) {
+    const [activeTab, setActiveTab] = useState('mismatch');
 
     const tabs = [
-        { id: 'different', label: 'Differences', count: different.length },
+        { id: 'mismatch', label: 'Mismatch', count: mismatch.length },
+        { id: 'partial', label: 'Partial Match', count: partial.length },
+        { id: 'exact', label: 'Exact Match', count: exact.length },
         { id: 'unique1', label: 'Unique to File 1', count: unique1.length },
         { id: 'unique2', label: 'Unique to File 2', count: unique2.length },
-        { id: 'shared', label: 'Shared Matches', count: shared.length },
     ];
 
     return (
@@ -50,8 +51,14 @@ export function DiffViewer({ shared, different, unique1, unique2 }) {
 
             {/* Content */}
             <div className="min-h-[300px]">
-                {activeTab === 'different' && (
-                    <DifferenceList items={different} />
+                {activeTab === 'mismatch' && (
+                    <DifferenceList items={mismatch} />
+                )}
+                {activeTab === 'partial' && (
+                    <SharedList items={partial} type="partial" />
+                )}
+                {activeTab === 'exact' && (
+                    <SharedList items={exact} type="exact" />
                 )}
                 {activeTab === 'unique1' && (
                     <UniqueList items={unique1} fileLabel="File 1" />
@@ -59,16 +66,13 @@ export function DiffViewer({ shared, different, unique1, unique2 }) {
                 {activeTab === 'unique2' && (
                     <UniqueList items={unique2} fileLabel="File 2" />
                 )}
-                {activeTab === 'shared' && (
-                    <SharedList items={shared} />
-                )}
             </div>
         </div>
     );
 }
 
 function DifferenceList({ items }) {
-    if (items.length === 0) return <EmptyState message="No differences found" />;
+    if (items.length === 0) return <EmptyState message="No mismatches found" />;
 
     return (
         <div className="space-y-2">
@@ -92,7 +96,7 @@ function DifferenceList({ items }) {
                     <div className="col-span-3 font-mono font-bold">
                         {item.match1.genotype}
                     </div>
-                    <div className="col-span-3 font-mono font-bold text-amber-500">
+                    <div className="col-span-3 font-mono font-bold text-red-500">
                         {item.match2.genotype}
                     </div>
                     <div className="col-span-4 flex items-center gap-2">
@@ -105,7 +109,7 @@ function DifferenceList({ items }) {
             ))}
             {items.length > 100 && (
                 <div className="text-center py-4 text-[var(--text-secondary)]">
-                    And {items.length - 100} more differences...
+                    And {items.length - 100} more mismatches...
                 </div>
             )}
         </div>
@@ -144,32 +148,47 @@ function UniqueList({ items, fileLabel }) {
     );
 }
 
-function SharedList({ items }) {
-    if (items.length === 0) return <EmptyState message="No shared variants found" />;
+function SharedList({ items, type }) {
+    if (items.length === 0) return <EmptyState message={`No ${type} matches found`} />;
+
+    const isExact = type === 'exact';
 
     return (
         <div className="space-y-2">
+            <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm font-medium text-[var(--text-secondary)]">
+                <div className="col-span-2">RSID</div>
+                <div className="col-span-3">File 1</div>
+                <div className="col-span-3">File 2</div>
+                <div className="col-span-4">Summary</div>
+            </div>
             {items.slice(0, 50).map((item, i) => (
                 <div
                     key={`${item.rsid}-${i}`}
                     className={clsx(
-                        'flex items-center gap-4 p-4 rounded-xl',
+                        'grid grid-cols-12 gap-4 p-4 rounded-xl items-center',
                         'bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10'
                     )}
                 >
-                    <div className="font-mono text-cyan-500 w-24">{item.rsid}</div>
-                    <div className="font-mono font-bold w-16 text-emerald-500">{item.match1.genotype}</div>
-                    <div className="flex-1">
-                        <p className="text-sm text-[var(--text-secondary)] truncate">
-                            {item.match1.summary || 'No summary'}
-                        </p>
+                    <div className="col-span-2 font-mono text-cyan-500 font-medium">{item.rsid}</div>
+                    <div className={clsx("col-span-3 font-mono font-bold", isExact ? "text-emerald-500" : "text-[var(--text-primary)]")}>
+                        {item.match1.genotype}
                     </div>
-                    <MagnitudeBadge magnitude={item.match1.magnitude} />
+                    <div className={clsx("col-span-3 font-mono font-bold", isExact ? "text-emerald-500" : "text-blue-500")}>
+                        {item.match2.genotype}
+                    </div>
+                    <div className="col-span-4 flex items-center gap-4">
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm text-[var(--text-secondary)] truncate">
+                                {item.match1.summary || 'No summary'}
+                            </p>
+                        </div>
+                        <MagnitudeBadge magnitude={item.match1.magnitude} />
+                    </div>
                 </div>
             ))}
             {items.length > 50 && (
                 <div className="text-center py-4 text-[var(--text-secondary)]">
-                    And {items.length - 50} more shared items...
+                    And {items.length - 50} more items...
                 </div>
             )}
         </div>

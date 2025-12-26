@@ -36,7 +36,7 @@ export function Footer() {
             </a>
             <div className="hidden md:block w-px h-3 bg-stone-300 dark:bg-stone-700" />
             <span className="text-stone-400 dark:text-stone-500">
-              © 2024 DNA Genesis
+              © 2025 DNA Genesis
             </span>
           </div>
         </div>

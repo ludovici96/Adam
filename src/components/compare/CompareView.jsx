@@ -5,53 +5,28 @@ import { FileDiff, ArrowRight, Loader } from 'lucide-react';
 import { DropZone } from '../upload/DropZone';
 import { DiffViewer } from './DiffViewer';
 import { SimilarityScore } from './SimilarityScore';
-import { ParserFactory } from '../../parsers';
-import { Matcher } from '../../analysis/matcher';
+import { apiClient } from '../../services/api';
 
 export function CompareView() {
     const [file1, setFile1] = useState(null);
     const [file2, setFile2] = useState(null);
     const [results1, setResults1] = useState(null);
     const [results2, setResults2] = useState(null);
-
-    // Database caching
-    const [database, setDatabase] = useState(null);
-    const [dbLoading, setDbLoading] = useState(false);
-
-    // Load database once
-    useEffect(() => {
-        if (!database && !dbLoading) {
-            setDbLoading(true);
-            fetch('/data/snpedia.json')
-                .then(res => res.json())
-                .then(data => {
-                    setDatabase(data);
-                    setDbLoading(false);
-                })
-                .catch(err => {
-                    console.error('Failed to load database:', err);
-                    setDbLoading(false);
-                });
-        }
-    }, [database, dbLoading]);
+    const [processing1, setProcessing1] = useState(false);
+    const [processing2, setProcessing2] = useState(false);
 
     // Process file helper
     const processFile = async (file) => {
-        if (!database) return null;
-
         try {
-            // Parse
-            const parseResult = await ParserFactory.parse(file);
-
-            // Match
-            const matcher = new Matcher(database);
-            const matchResult = matcher.match(parseResult.variants);
+            // Use server API to analyze file
+            const data = await apiClient.analyzeFile(file);
 
             return {
                 file,
-                variants: parseResult.variants,
-                matches: matchResult.matches,
-                stats: matchResult.stats
+                matches: data.matches || [],
+                // stats isn't strictly needed for comparison logic as it re-calcs, 
+                // but we can pass what we have
+                stats: data.summary
             };
         } catch (err) {
             console.error('Error processing file:', err);
@@ -61,14 +36,26 @@ export function CompareView() {
 
     const handleFile1 = async (file) => {
         setFile1(file);
-        const results = await processFile(file);
-        setResults1(results);
+        if (file) {
+            setProcessing1(true);
+            const results = await processFile(file);
+            setResults1(results);
+            setProcessing1(false);
+        } else {
+            setResults1(null);
+        }
     };
 
     const handleFile2 = async (file) => {
         setFile2(file);
-        const results = await processFile(file);
-        setResults2(results);
+        if (file) {
+            setProcessing2(true);
+            const results = await processFile(file);
+            setResults2(results);
+            setProcessing2(false);
+        } else {
+            setResults2(null);
+        }
     };
 
     const comparison = useMemo(() => {
@@ -77,19 +64,64 @@ export function CompareView() {
         const map1 = new Map(results1.matches.map(m => [m.rsid, m]));
         const map2 = new Map(results2.matches.map(m => [m.rsid, m]));
 
-        const shared = [];
-        const different = [];
+        const exact = [];
+        const partial = [];
+        const mismatch = [];
         const unique1 = [];
         const unique2 = [];
+
+        // Helper to compare genotypes
+        const compareGenotypes = (g1, g2) => {
+            if (!g1 || !g2) return 'mismatch';
+
+            // Helper to get complement
+            const getComplement = (seq) => {
+                const map = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' };
+                return seq.split('').map(b => map[b] || b).join('');
+            };
+
+            const checkMatch = (seq1, seq2) => {
+                const a1 = seq1.length === 1 ? [seq1, seq1] : seq1.split('');
+                const a2 = seq2.length === 1 ? [seq2, seq2] : seq2.split('');
+
+                const set1 = new Set(a1);
+                const set2 = new Set(a2);
+
+                // Exact match (order independent)
+                const s1 = a1.sort().join('');
+                const s2 = a2.sort().join('');
+                if (s1 === s2) return 'exact';
+
+                // Partial match
+                const intersection = [...set1].filter(x => set2.has(x));
+                if (intersection.length > 0) return 'partial';
+
+                return 'mismatch';
+            };
+
+            // 1. Try direct comparison
+            const directStatus = checkMatch(g1, g2);
+            if (directStatus !== 'mismatch') return directStatus;
+
+            // 2. Try strand flip (complement of g2)
+            // e.g. g1="AG", g2="TC" -> flip g2="AG" -> match
+            const flippedG2 = getComplement(g2);
+            const flippedStatus = checkMatch(g1, flippedG2);
+
+            return flippedStatus;
+        };
 
         // Check intersection and file 1 uniques
         for (const [rsid, match1] of map1) {
             const match2 = map2.get(rsid);
             if (match2) {
-                if (match1.genotype === match2.genotype) {
-                    shared.push({ rsid, match1, match2, status: 'identical' });
+                const status = compareGenotypes(match1.genotype, match2.genotype);
+                if (status === 'exact') {
+                    exact.push({ rsid, match1, match2, status: 'exact' });
+                } else if (status === 'partial') {
+                    partial.push({ rsid, match1, match2, status: 'partial' });
                 } else {
-                    different.push({ rsid, match1, match2, status: 'different' });
+                    mismatch.push({ rsid, match1, match2, status: 'mismatch' });
                 }
             } else {
                 unique1.push({ ...match1, rsid });
@@ -110,38 +142,40 @@ export function CompareView() {
             return (magB || 0) - (magA || 0);
         };
 
-        shared.sort(sortByMag);
-        different.sort(sortByMag);
+        exact.sort(sortByMag);
+        partial.sort(sortByMag);
+        mismatch.sort(sortByMag);
         unique1.sort(sortByMag);
         unique2.sort(sortByMag);
 
-        const totalShared = shared.length + different.length;
-        const identityRate = totalShared > 0 ? shared.length / totalShared : 0;
+        const totalCompared = exact.length + partial.length + mismatch.length;
+
+        // Identity Rate: Exact Genotype Match %
+        const identityRate = totalCompared > 0 ? exact.length / totalCompared : 0;
+
+        // Compatibility Rate: % with at least one shared allele (Parent/Child should be ~100%)
+        const compatibilityRate = totalCompared > 0 ? (exact.length + partial.length) / totalCompared : 0;
 
         return {
-            shared,
-            different,
+            exact,
+            partial,
+            mismatch,
             unique1,
             unique2,
             stats: {
-                totalCompared: totalShared,
-                identical: shared.length,
-                different: different.length,
+                totalCompared,
+                identical: exact.length,
+                partial: partial.length,
+                different: mismatch.length,
                 unique1: unique1.length,
                 unique2: unique2.length,
-                identityRate
+                identityRate,
+                compatibilityRate
             }
         };
     }, [results1, results2]);
 
-    if (dbLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[50vh]">
-                <Loader className="w-8 h-8 text-cyan-500 animate-spin mb-4" />
-                <p className="text-[var(--text-secondary)]">Initializing comparison engine...</p>
-            </div>
-        );
-    }
+
 
     return (
         <div className="max-w-7xl mx-auto space-y-8">
@@ -162,6 +196,7 @@ export function CompareView() {
                     results={results1}
                     onSelect={handleFile1}
                     color="cyan"
+                    processing={processing1}
                 />
 
                 {/* File Slot 2 */}
@@ -171,6 +206,7 @@ export function CompareView() {
                     results={results2}
                     onSelect={handleFile2}
                     color="purple"
+                    processing={processing2}
                 />
             </div>
 
@@ -191,13 +227,13 @@ export function CompareView() {
                         </div>
 
                         <SimilarityScore
-                            identityRate={comparison.stats.identityRate}
                             stats={comparison.stats}
                         />
 
                         <DiffViewer
-                            shared={comparison.shared}
-                            different={comparison.different}
+                            exact={comparison.exact}
+                            partial={comparison.partial}
+                            mismatch={comparison.mismatch}
                             unique1={comparison.unique1}
                             unique2={comparison.unique2}
                         />
@@ -208,7 +244,7 @@ export function CompareView() {
     );
 }
 
-function FileSlot({ label, file, results, onSelect, color }) {
+function FileSlot({ label, file, results, onSelect, color, processing }) {
     const isSelected = !!file;
 
     return (
@@ -225,24 +261,46 @@ function FileSlot({ label, file, results, onSelect, color }) {
                         {results.matches.length.toLocaleString()} SNPs
                     </span>
                 )}
+                {processing && (
+                    <span className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                        <Loader className="w-3 h-3 animate-spin" />
+                        Processing...
+                    </span>
+                )}
             </div>
 
             {!file ? (
                 <DropZone onFileSelect={onSelect} />
             ) : (
-                <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/5">
-                    <div className="flex-1 min-w-0">
-                        <p className="font-medium text-[var(--text-primary)] truncate">{file.name}</p>
-                        <p className="text-xs text-[var(--text-secondary)]">
-                            {(file.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/5">
+                        <div className="flex-1 min-w-0">
+                            <p className="font-medium text-[var(--text-primary)] truncate">{file.name}</p>
+                            <p className="text-xs text-[var(--text-secondary)]">
+                                {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => onSelect(null)}
+                            disabled={processing}
+                            className="text-sm text-red-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                        >
+                            Change
+                        </button>
                     </div>
-                    <button
-                        onClick={() => onSelect(null)}
-                        className="text-sm text-red-400 hover:text-red-500 transition-colors"
-                    >
-                        Change
-                    </button>
+
+                    {processing && (
+                        <div className="relative h-1.5 w-full bg-stone-100 dark:bg-white/5 rounded-full overflow-hidden">
+                            <div className={`absolute inset-0 bg-${color}-500 w-1/3 animate-[shimmer_2s_infinite_linear]`} />
+                            {/* Simple animated progress bar */}
+                            <motion.div
+                                className={`h-full bg-${color}-500`}
+                                initial={{ width: "0%" }}
+                                animate={{ width: "100%" }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                            />
+                        </div>
+                    )}
                 </div>
             )}
         </div>
