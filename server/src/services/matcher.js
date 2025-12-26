@@ -93,28 +93,30 @@ export function matchVariants(variants) {
             }
         }
 
-        if (snpData && snpData.genotypes) {
+        if (snpData) {
             const userGenotype = v.genotype;
-            let matchData = snpData.genotypes[userGenotype];
+            let matchData = snpData.genotypes?.[userGenotype];
 
-            if (!matchData) {
+            if (!matchData && snpData.genotypes) {
                 const rev = reverseComplement(userGenotype);
                 matchData = snpData.genotypes[rev];
             }
 
-            if (matchData) {
-                const inferredCategory = inferCategory(matchData.summary, snpData.category);
+            if (matchData || snpData.gwasAssociations) {
+                const summary = matchData?.summary || snpData.gwasAssociations?.[0]?.trait || '';
+                const inferredCategory = inferCategory(summary, snpData.category);
 
                 matches.push({
                     rsid: rsid || `${v.chrom}:${v.pos}`,
                     userGenotype,
-                    magnitude: matchData.magnitude || 0,
-                    repute: matchData.repute,
-                    summary: matchData.summary,
+                    magnitude: matchData?.magnitude || 0,
+                    repute: matchData?.repute,
+                    summary: matchData?.summary || '',
                     chrom: v.chrom,
                     pos: v.pos,
                     category: inferredCategory,
-                    source: snpData.source
+                    source: snpData.source,
+                    gwasAssociations: snpData.gwasAssociations || null
                 });
             } else {
                 stats.genotypeMisses++;

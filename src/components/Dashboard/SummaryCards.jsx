@@ -40,7 +40,7 @@ export function SummaryCards({
       iconColor: 'text-cyan-400'
     },
     {
-      label: 'SNPedia Matches',
+      label: 'SNP Matches',
       value: totalMatches.toLocaleString(),
       icon: Target,
       color: 'indigo',

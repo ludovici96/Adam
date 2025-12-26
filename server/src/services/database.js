@@ -5,6 +5,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import readline from 'readline';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,6 +19,7 @@ class DatabaseService {
         this.stats = {
             snpediaCount: 0,
             clinvarCount: 0,
+            gwasCount: 0,
             totalCount: 0,
             loadTime: 0
         };
@@ -103,6 +105,87 @@ class DatabaseService {
                 });
 
                 pipeline.on('error', reject);
+            });
+        }
+
+        // Load GWAS Catalog (adds trait associations)
+        const gwasPath = path.join(dataDir, 'gwas/gwas-catalog-download-associations-alt-full.tsv');
+        if (fs.existsSync(gwasPath)) {
+            console.log('Loading GWAS Catalog...');
+
+            await new Promise((resolve, reject) => {
+                let added = 0;
+                let processed = 0;
+                let headers = null;
+
+                const rl = readline.createInterface({
+                    input: fs.createReadStream(gwasPath),
+                    crlfDelay: Infinity
+                });
+
+                rl.on('line', (line) => {
+                    if (!headers) {
+                        headers = line.split('\t');
+                        return;
+                    }
+
+                    processed++;
+                    const cols = line.split('\t');
+                    const snps = cols[headers.indexOf('SNPS')];
+                    if (!snps || !snps.startsWith('rs')) return;
+
+                    const rsidLower = snps.toLowerCase();
+                    const chrom = cols[headers.indexOf('CHR_ID')];
+                    const pos = cols[headers.indexOf('CHR_POS')];
+                    const trait = cols[headers.indexOf('DISEASE/TRAIT')] || cols[headers.indexOf('MAPPED_TRAIT')];
+                    const pValue = parseFloat(cols[headers.indexOf('P-VALUE')]);
+                    const orBeta = parseFloat(cols[headers.indexOf('OR or BETA')]);
+                    const riskAllele = cols[headers.indexOf('STRONGEST SNP-RISK ALLELE')];
+                    const pubmedId = cols[headers.indexOf('PUBMEDID')];
+
+                    const gwasInfo = {
+                        trait,
+                        pValue: isNaN(pValue) ? null : pValue,
+                        orBeta: isNaN(orBeta) ? null : orBeta,
+                        riskAllele,
+                        pubmedId
+                    };
+
+                    if (this.database.has(rsidLower)) {
+                        const existing = this.database.get(rsidLower);
+                        if (!existing.gwasAssociations) {
+                            existing.gwasAssociations = [];
+                        }
+                        existing.gwasAssociations.push(gwasInfo);
+                    } else {
+                        const chromNum = chrom?.replace('chr', '');
+                        const posNum = parseInt(pos, 10);
+                        this.database.set(rsidLower, {
+                            source: 'gwas',
+                            chrom: chromNum,
+                            pos: isNaN(posNum) ? null : posNum,
+                            gwasAssociations: [gwasInfo],
+                            genotypes: {}
+                        });
+                        added++;
+
+                        if (chromNum && posNum && !this.positionIndex.has(`${chromNum}:${posNum}`)) {
+                            this.positionIndex.set(`${chromNum}:${posNum}`, rsidLower);
+                        }
+                    }
+
+                    if (processed % 200000 === 0) {
+                        console.log(`  Processed ${processed.toLocaleString()} GWAS entries...`);
+                    }
+                });
+
+                rl.on('close', () => {
+                    this.stats.gwasCount = added;
+                    console.log(`  Added ${added.toLocaleString()} unique GWAS entries`);
+                    resolve();
+                });
+
+                rl.on('error', reject);
             });
         }
 

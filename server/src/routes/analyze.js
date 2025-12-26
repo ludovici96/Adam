@@ -37,7 +37,8 @@ router.post('/', upload.single('file'), async (req, res) => {
         } else if (filename.endsWith('.csv') || filename.endsWith('.txt')) {
             variants = parseCSV(content);
         } else {
-            if (content.startsWith('##fileformat=VCF') || content.includes('\t')) {
+            // Only use VCF parser if it's actually VCF format
+            if (content.startsWith('##fileformat=VCF') || content.includes('##fileformat=VCF')) {
                 variants = parseVCF(content);
             } else {
                 variants = parseCSV(content);

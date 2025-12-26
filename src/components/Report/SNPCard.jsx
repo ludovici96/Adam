@@ -1,7 +1,7 @@
 import React from 'react';
 import { clsx } from 'clsx';
 import { motion } from 'framer-motion';
-import { ExternalLink, AlertTriangle, ThumbsUp, Minus, Info } from 'lucide-react';
+import { ExternalLink, AlertTriangle, ThumbsUp, Minus, Info, Database } from 'lucide-react';
 import { MagnitudeBadge, CategoryBadge } from '../common/Badge';
 
 const cardVariants = {
@@ -22,7 +22,9 @@ export function SNPCard({ match, onClick, compact = false }) {
     summary,
     category,
     chrom,
-    pos
+    pos,
+    source,
+    gwasAssociations
   } = match;
 
   const getReputeStyles = () => {
@@ -169,9 +171,49 @@ export function SNPCard({ match, onClick, compact = false }) {
         {summary || 'No summary available for this variant.'}
       </p>
 
+      {/* GWAS Associations */}
+      {gwasAssociations && gwasAssociations.length > 0 && (
+        <div className="mb-4 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
+          <div className="flex items-center gap-1.5 mb-2 text-xs font-medium text-indigo-400">
+            <Database className="w-3.5 h-3.5" />
+            GWAS Trait Associations
+          </div>
+          <div className="space-y-1.5">
+            {gwasAssociations.slice(0, 3).map((assoc, idx) => (
+              <div key={idx} className="text-xs text-[var(--text-secondary)]">
+                <span className="font-medium text-[var(--text-primary)]">{assoc.trait}</span>
+                {assoc.pValue && (
+                  <span className="ml-2 text-indigo-400">p={assoc.pValue.toExponential(1)}</span>
+                )}
+                {assoc.orBeta && (
+                  <span className="ml-2 text-stone-400">OR={assoc.orBeta.toFixed(2)}</span>
+                )}
+              </div>
+            ))}
+            {gwasAssociations.length > 3 && (
+              <div className="text-xs text-indigo-400">
+                +{gwasAssociations.length - 3} more associations
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="flex items-center justify-between">
-        <CategoryBadge category={category} size="sm" />
+        <div className="flex items-center gap-2">
+          <CategoryBadge category={category} size="sm" />
+          {source && (
+            <span className={clsx(
+              'px-2 py-0.5 rounded text-xs font-medium',
+              source === 'snpedia' && 'bg-cyan-500/10 text-cyan-400',
+              source === 'clinvar' && 'bg-amber-500/10 text-amber-400',
+              source === 'gwas' && 'bg-indigo-500/10 text-indigo-400'
+            )}>
+              {source === 'snpedia' ? 'SNPedia' : source === 'clinvar' ? 'ClinVar' : 'GWAS'}
+            </span>
+          )}
+        </div>
 
         <button
           onClick={(e) => {

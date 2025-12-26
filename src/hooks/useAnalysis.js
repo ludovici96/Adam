@@ -46,7 +46,7 @@ export function useAnalysisFlow() {
       setAppState(APP_STATES.PARSING);
       setProgress({ stage: 'parsing', percent: 10, message: 'Uploading file to server...' });
 
-      setProgress({ stage: 'analyzing', percent: 30, message: 'Analyzing with server (2.4M SNPs)...' });
+      setProgress({ stage: 'analyzing', percent: 30, message: 'Analyzing with server (3M+ SNPs)...' });
 
       const result = await apiClient.analyzeFile(file);
 
@@ -177,7 +177,7 @@ export function useAnalysisFlow() {
 
   const runAnalysis = useCallback(async (file, fileType) => {
     if (useAPI) {
-      console.log('Using server API for analysis (2.4M SNPs)');
+      console.log('Using server API for analysis (3M+ SNPs)');
       return runAnalysisWithAPI(file);
     } else {
       console.log('Using local analysis (SNPedia only)');

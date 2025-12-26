@@ -85,11 +85,24 @@ export function ReportView({ onBack, onExport }) {
         return sort.direction === 'desc' ? diff : -diff;
       }
       if (sort.field === 'repute') {
-        const order = { bad: 3, neutral: 2, good: 1 };
+        // Put items with no repute at the bottom
         const aRepute = a.repute?.toLowerCase();
         const bRepute = b.repute?.toLowerCase();
+
+        // If one has repute and other doesn't, repute wins
+        if (aRepute && !bRepute) return -1;
+        if (!aRepute && bRepute) return 1;
+        if (!aRepute && !bRepute) {
+          // Both have no repute, sort by magnitude desc
+          return (b.magnitude || 0) - (a.magnitude || 0);
+        }
+
+        const order = { bad: 3, neutral: 2, good: 1 };
         const diff = (order[bRepute] || 0) - (order[aRepute] || 0);
-        return sort.direction === 'desc' ? diff : -diff;
+        if (diff !== 0) return sort.direction === 'desc' ? diff : -diff;
+
+        // Same repute, sort by magnitude desc
+        return (b.magnitude || 0) - (a.magnitude || 0);
       }
       return 0;
     });

@@ -17,7 +17,8 @@ import {
   Dna,
   ChevronRight,
   ChevronLeft,
-  Printer
+  Printer,
+  Database
 } from 'lucide-react';
 import { Modal, ModalFooter } from '../common/Modal';
 import { Button } from '../common/Button';
@@ -66,7 +67,9 @@ export function SNPDetailModal({
     summary,
     category,
     chrom,
-    pos
+    pos,
+    source,
+    gwasAssociations
   } = match;
 
   const snpediaUrl = rsid ? `https://www.snpedia.com/index.php/${rsid}` : null;
@@ -402,7 +405,80 @@ export function SNPDetailModal({
               <div className="flex items-center gap-2">
                 <span className="text-sm text-[var(--text-secondary)]">Category:</span>
                 <CategoryBadge category={category} />
+                {source && (
+                  <span className={clsx(
+                    'px-2 py-0.5 rounded text-xs font-medium ml-2',
+                    source === 'snpedia' && 'bg-cyan-500/10 text-cyan-400',
+                    source === 'clinvar' && 'bg-amber-500/10 text-amber-400',
+                    source === 'gwas' && 'bg-indigo-500/10 text-indigo-400'
+                  )}>
+                    {source === 'snpedia' ? 'SNPedia' : source === 'clinvar' ? 'ClinVar' : 'GWAS'}
+                  </span>
+                )}
               </div>
+
+              {/* GWAS Trait Associations */}
+              {gwasAssociations && gwasAssociations.length > 0 && (
+                <div className={clsx(
+                  'p-4 rounded-xl',
+                  'bg-indigo-500/5 border border-indigo-500/10'
+                )}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Database className="w-5 h-5 text-indigo-400" />
+                    <h4 className="font-medium text-indigo-400">
+                      GWAS Trait Associations ({gwasAssociations.length})
+                    </h4>
+                  </div>
+                  <p className="text-xs text-[var(--text-secondary)] mb-4">
+                    Genome-wide association studies linking this variant to traits and diseases.
+                  </p>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {gwasAssociations.map((assoc, idx) => (
+                      <div
+                        key={idx}
+                        className={clsx(
+                          'p-3 rounded-lg',
+                          'bg-white/50 dark:bg-white/5',
+                          'border border-indigo-500/10'
+                        )}
+                      >
+                        <div className="font-medium text-[var(--text-primary)] mb-1">
+                          {assoc.trait}
+                        </div>
+                        <div className="flex flex-wrap gap-3 text-xs">
+                          {assoc.pValue && (
+                            <span className="text-indigo-400">
+                              P-value: {assoc.pValue.toExponential(2)}
+                            </span>
+                          )}
+                          {assoc.orBeta && (
+                            <span className="text-stone-400">
+                              OR/Beta: {assoc.orBeta.toFixed(2)}
+                            </span>
+                          )}
+                          {assoc.riskAllele && (
+                            <span className="text-amber-400">
+                              Risk allele: {assoc.riskAllele}
+                            </span>
+                          )}
+                          {assoc.pubmedId && (
+                            <a
+                              href={`https://pubmed.ncbi.nlm.nih.gov/${assoc.pubmedId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              PubMed
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
