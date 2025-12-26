@@ -14,6 +14,74 @@ export class Matcher {
         }
     }
 
+    // Infer category from summary text using keyword matching
+    inferCategory(summary, existingCategory) {
+        // If already has a valid category (not 'other'), keep it
+        if (existingCategory && existingCategory !== 'other') {
+            return existingCategory;
+        }
+
+        if (!summary) return 'other';
+
+        const text = summary.toLowerCase();
+
+        // Health keywords
+        const healthKeywords = [
+            'cancer', 'tumor', 'carcinoma', 'leukemia', 'lymphoma', 'melanoma',
+            'diabetes', 'heart', 'cardiac', 'cardiovascular', 'stroke', 'hypertension',
+            'alzheimer', 'parkinson', 'dementia', 'neurological',
+            'obesity', 'bmi', 'weight', 'cholesterol', 'triglyceride',
+            'disease', 'disorder', 'syndrome', 'risk', 'susceptibility',
+            'asthma', 'arthritis', 'autoimmune', 'inflammation',
+            'schizophrenia', 'depression', 'bipolar', 'anxiety',
+            'macular degeneration', 'glaucoma', 'blindness',
+            'osteoporosis', 'fracture', 'bone density'
+        ];
+
+        // Pharmacogenomics keywords
+        const pharmaKeywords = [
+            'drug', 'medication', 'warfarin', 'clopidogrel', 'statin',
+            'metabolism', 'metabolizer', 'cyp', 'enzyme',
+            'response', 'sensitivity', 'resistance', 'dosage',
+            'adverse', 'side effect', 'toxicity',
+            'pharmacokinetic', 'pharmacodynamic'
+        ];
+
+        // Traits keywords
+        const traitsKeywords = [
+            'eye color', 'hair color', 'skin', 'pigment', 'freckling',
+            'height', 'tall', 'short',
+            'caffeine', 'alcohol', 'bitter taste', 'cilantro',
+            'lactose', 'gluten',
+            'muscle', 'athletic', 'endurance', 'sprint',
+            'sleep', 'circadian', 'morning person', 'night owl',
+            'earwax', 'dimple', 'cleft chin', 'widow peak'
+        ];
+
+        // Carrier keywords
+        const carrierKeywords = [
+            'carrier', 'recessive', 'inherited',
+            'cystic fibrosis', 'sickle cell', 'tay-sachs',
+            'hemophilia', 'thalassemia'
+        ];
+
+        // Ancestry keywords
+        const ancestryKeywords = [
+            'ancestry', 'haplogroup', 'population', 'ethnicity',
+            'european', 'african', 'asian', 'native american',
+            'neanderthal', 'denisovan'
+        ];
+
+        // Check in order of specificity
+        if (pharmaKeywords.some(k => text.includes(k))) return 'pharmacogenomics';
+        if (carrierKeywords.some(k => text.includes(k))) return 'carrier';
+        if (ancestryKeywords.some(k => text.includes(k))) return 'ancestry';
+        if (traitsKeywords.some(k => text.includes(k))) return 'traits';
+        if (healthKeywords.some(k => text.includes(k))) return 'health';
+
+        return 'other';
+    }
+
     match(userVariants) {
         const matches = [];
         const stats = {
@@ -61,13 +129,16 @@ export class Matcher {
                 }
 
                 if (matchData) {
+                    // Infer category from summary if needed
+                    const inferredCategory = this.inferCategory(matchData.summary, snpData.category);
+
                     matches.push({
                         rsid,
                         userGenotype,
                         ...matchData,
                         chrom: v.chrom,
                         pos: v.pos,
-                        category: snpData.category
+                        category: inferredCategory
                     });
                 } else {
                     stats.genotypeMisses++;
@@ -99,3 +170,4 @@ export class Matcher {
         return genotype.split('').map(b => map[b] || b).join('');
     }
 }
+
