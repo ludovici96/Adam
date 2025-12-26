@@ -1,11 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Dna, Shield, Download } from 'lucide-react';
+import { Sun, Moon, Dna, Shield, Download, FileDiff } from 'lucide-react';
 import { useUI } from '../../context/UIContext';
 import { useApp } from '../../context/AppContext';
 
 export function Header({ onExport }) {
-  const { resolvedTheme, toggleTheme } = useUI();
+  const { resolvedTheme, toggleTheme, setActiveView } = useUI();
   const { appState, APP_STATES } = useApp();
 
   const showExport = appState === APP_STATES.COMPLETE;
@@ -53,16 +53,47 @@ export function Header({ onExport }) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Export Button */}
+          {/* Export Dropdown */}
           {showExport && (
-            <button
-              onClick={onExport}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 border border-gray-200 dark:border-white/10 rounded-full text-sm font-medium text-[var(--text-primary)] transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Export
-            </button>
+            <div className="relative group">
+              <button
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 border border-gray-200 dark:border-white/10 rounded-full text-sm font-medium text-[var(--text-primary)] transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </button>
+
+              <div className="absolute right-0 top-full mt-2 w-40 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right">
+                <button
+                  onClick={() => onExport('csv')}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                >
+                  Export as CSV
+                </button>
+                <button
+                  onClick={() => onExport('json')}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                >
+                  Export as JSON
+                </button>
+                <button
+                  onClick={() => onExport('pdf')}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                >
+                  Export as PDF
+                </button>
+              </div>
+            </div>
           )}
+
+          {/* Compare Button */}
+          <button
+            onClick={() => setActiveView('compare')}
+            className="flex items-center gap-2 px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 rounded-full text-sm font-medium text-cyan-500 transition-colors"
+          >
+            <FileDiff className="w-4 h-4" />
+            Compare
+          </button>
 
           {/* Theme Toggle */}
           <button

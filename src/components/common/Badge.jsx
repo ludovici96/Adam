@@ -124,8 +124,26 @@ export function Badge({
 }
 
 // Magnitude badge with automatic color coding
-export function MagnitudeBadge({ magnitude, size = 'md', className }) {
-  const getVariant = (mag) => {
+export function MagnitudeBadge({ magnitude, repute, size = 'md', className }) {
+  const getVariant = (mag, rep) => {
+    const r = rep?.toLowerCase();
+
+    // For good/beneficial repute, use green shades
+    if (r === 'good') {
+      if (mag >= 3) return 'benign';  // bright green for high-impact good
+      if (mag >= 2) return 'low';     // green
+      return 'benign';                 // light green
+    }
+
+    // For bad/risk repute, use red/orange shades
+    if (r === 'bad') {
+      if (mag >= 4) return 'critical';
+      if (mag >= 3) return 'high';
+      if (mag >= 2) return 'moderate';
+      return 'low';
+    }
+
+    // Default: use magnitude-based coloring
     if (mag >= 4) return 'critical';
     if (mag >= 3) return 'high';
     if (mag >= 2) return 'moderate';
@@ -135,7 +153,7 @@ export function MagnitudeBadge({ magnitude, size = 'md', className }) {
 
   return (
     <Badge
-      variant={getVariant(magnitude)}
+      variant={getVariant(magnitude, repute)}
       size={size}
       className={className}
     >

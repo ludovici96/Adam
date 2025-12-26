@@ -124,7 +124,8 @@ export function SNPDetailModal({
   };
 
   const getReputeInfo = () => {
-    switch (repute) {
+    const r = repute?.toLowerCase();
+    switch (r) {
       case 'bad':
         return {
           icon: AlertTriangle,
@@ -195,7 +196,7 @@ export function SNPDetailModal({
                 )}
               </button>
             </div>
-            <MagnitudeBadge magnitude={magnitude} />
+            <MagnitudeBadge magnitude={magnitude} repute={repute} />
           </div>
 
           {/* Navigation Controls */}
@@ -333,7 +334,7 @@ export function SNPDetailModal({
                   <h4 className="font-medium text-[var(--text-primary)]">
                     Magnitude Score
                   </h4>
-                  <MagnitudeBadge magnitude={magnitude} size="lg" />
+                  <MagnitudeBadge magnitude={magnitude} repute={repute} size="lg" />
                 </div>
                 <p className="text-sm text-[var(--text-secondary)]">
                   {getMagnitudeDescription(magnitude)}
@@ -502,7 +503,7 @@ export function SNPDetailModal({
                           'hover:bg-gray-200 dark:hover:bg-white/10 transition-colors group'
                         )}
                       >
-                        <MagnitudeBadge magnitude={snp.magnitude} />
+                        <MagnitudeBadge magnitude={snp.magnitude} repute={snp.repute} />
                         <div className="flex-1 min-w-0">
                           <div className="font-mono text-sm text-cyan-500">{snp.rsid}</div>
                           <div className="text-xs text-[var(--text-secondary)] truncate">

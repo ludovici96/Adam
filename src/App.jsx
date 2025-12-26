@@ -13,6 +13,7 @@ import { AppShell } from './components/layout/AppShell';
 import { UploadView } from './components/upload/UploadView';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { ReportView } from './components/report/ReportView';
+import { CompareView } from './components/compare/CompareView';
 
 // Onboarding
 import { OnboardingFlow, useOnboarding } from './components/onboarding/OnboardingFlow';
@@ -37,7 +38,7 @@ function AppContent() {
   const { reset: resetAnalysis } = useAnalysis();
   const { activeView, setActiveView, selectSNP } = useUI();
   const { runAnalysis } = useAnalysisFlow();
-  const { exportCSV, exportJSON } = useExport();
+  const { exportCSV, exportJSON, exportPDF } = useExport();
   const { showOnboarding, completeOnboarding } = useOnboarding();
 
   // Handle file selection
@@ -57,13 +58,20 @@ function AppContent() {
   const handleExport = useCallback((format = 'csv') => {
     if (format === 'json') {
       exportJSON();
+    } else if (format === 'pdf') {
+      exportPDF();
     } else {
       exportCSV();
     }
-  }, [exportCSV, exportJSON]);
+  }, [exportCSV, exportJSON, exportPDF]);
 
   // Determine which view to show
   const getView = () => {
+    // If user explicitly selected compare view, allow it even if analysis isn't complete (since it's independent)
+    if (activeView === 'compare') {
+      return 'compare';
+    }
+
     // If still processing, show upload view with processing indicator
     if ([APP_STATES.IDLE, APP_STATES.UPLOADING, APP_STATES.PARSING, APP_STATES.ANALYZING].includes(appState)) {
       return 'upload';
@@ -91,51 +99,64 @@ function AppContent() {
 
       <AppShell onExport={handleExport}>
         <AnimatePresence mode="wait">
-        {currentView === 'upload' && (
-          <motion.div
-            key="upload"
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={pageTransition}
-          >
-            <UploadView onFileSelect={handleFileSelect} />
-          </motion.div>
-        )}
+          {currentView === 'upload' && (
+            <motion.div
+              key="upload"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={pageTransition}
+            >
+              <UploadView onFileSelect={handleFileSelect} />
+            </motion.div>
+          )}
 
-        {currentView === 'dashboard' && (
-          <motion.div
-            key="dashboard"
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={pageTransition}
-          >
-            <Dashboard
-              onViewReport={() => setActiveView('report')}
-              onReset={handleReset}
-              onSelectSNP={selectSNP}
-            />
-          </motion.div>
-        )}
+          {currentView === 'dashboard' && (
+            <motion.div
+              key="dashboard"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={pageTransition}
+            >
+              <Dashboard
+                onViewReport={() => setActiveView('report')}
+                onReset={handleReset}
+                onSelectSNP={selectSNP}
+              />
+            </motion.div>
+          )}
 
-        {currentView === 'report' && (
-          <motion.div
-            key="report"
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={pageTransition}
-          >
-            <ReportView
-              onBack={() => setActiveView('dashboard')}
-              onExport={handleExport}
-            />
-          </motion.div>
-        )}
+          {currentView === 'report' && (
+            <motion.div
+              key="report"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={pageTransition}
+            >
+              <ReportView
+                onBack={() => setActiveView('dashboard')}
+                onExport={handleExport}
+              />
+            </motion.div>
+          )}
+
+          {currentView === 'compare' && (
+            <motion.div
+              key="compare"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={pageTransition}
+            >
+              <CompareView />
+            </motion.div>
+          )}
         </AnimatePresence>
       </AppShell>
     </>

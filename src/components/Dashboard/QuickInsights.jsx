@@ -39,7 +39,8 @@ export function QuickInsights({ matches = [], maxItems = 5, onSelectSNP }) {
   }
 
   const getReputeIcon = (repute) => {
-    switch (repute) {
+    const r = repute?.toLowerCase();
+    switch (r) {
       case 'bad':
         return <AlertTriangle className="w-4 h-4 text-red-400" />;
       case 'good':
@@ -85,9 +86,9 @@ export function QuickInsights({ matches = [], maxItems = 5, onSelectSNP }) {
               {/* Repute Icon */}
               <div className={clsx(
                 'mt-0.5 p-1.5 rounded-lg',
-                match.repute === 'bad' && 'bg-red-500/10',
-                match.repute === 'good' && 'bg-emerald-500/10',
-                match.repute === 'neutral' && 'bg-gray-500/10'
+                match.repute?.toLowerCase() === 'bad' && 'bg-red-500/10',
+                match.repute?.toLowerCase() === 'good' && 'bg-emerald-500/10',
+                match.repute?.toLowerCase() === 'neutral' && 'bg-gray-500/10'
               )}>
                 {getReputeIcon(match.repute)}
               </div>
@@ -98,7 +99,7 @@ export function QuickInsights({ matches = [], maxItems = 5, onSelectSNP }) {
                   <code className="text-sm font-mono text-cyan-400">
                     {match.rsid}
                   </code>
-                  <MagnitudeBadge magnitude={match.magnitude} size="xs" />
+                  <MagnitudeBadge magnitude={match.magnitude} repute={match.repute} size="xs" />
                   {match.userGenotype && (
                     <span className="text-xs text-[var(--text-secondary)] font-mono">
                       {match.userGenotype}

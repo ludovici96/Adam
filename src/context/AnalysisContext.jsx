@@ -199,8 +199,8 @@ export function AnalysisProvider({ children }) {
   // Computed values
   const computed = useMemo(() => {
     const notableFindings = state.matches.filter(m => (m.magnitude || 0) >= 2);
-    const positiveFindings = state.matches.filter(m => m.repute === 'good');
-    const negativeFindings = state.matches.filter(m => m.repute === 'bad');
+    const positiveFindings = state.matches.filter(m => m.repute?.toLowerCase() === 'good');
+    const negativeFindings = state.matches.filter(m => m.repute?.toLowerCase() === 'bad');
 
     // Magnitude distribution
     const magnitudeDistribution = {

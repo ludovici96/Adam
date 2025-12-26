@@ -61,7 +61,7 @@ export function ReportView({ onBack, onExport }) {
 
     // Filter by repute
     if (filters.repute && filters.repute !== 'all') {
-      result = result.filter(match => match.repute === filters.repute);
+      result = result.filter(match => match.repute?.toLowerCase() === filters.repute.toLowerCase());
     }
 
     // Filter by magnitude
@@ -77,7 +77,9 @@ export function ReportView({ onBack, onExport }) {
       }
       if (sort.field === 'repute') {
         const order = { bad: 3, neutral: 2, good: 1 };
-        const diff = (order[b.repute] || 0) - (order[a.repute] || 0);
+        const aRepute = a.repute?.toLowerCase();
+        const bRepute = b.repute?.toLowerCase();
+        const diff = (order[bRepute] || 0) - (order[aRepute] || 0);
         return sort.direction === 'desc' ? diff : -diff;
       }
       return 0;
@@ -189,7 +191,7 @@ export function ReportView({ onBack, onExport }) {
           </motion.div>
         ) : (
           <motion.div
-            key="results"
+            key={`results-${sort.field}-${sort.direction}-${activeCategory}`}
             variants={containerVariants}
             initial="hidden"
             animate="visible"

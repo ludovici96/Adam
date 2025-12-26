@@ -30,8 +30,8 @@ const categories = [
 const sortOptions = [
   { id: 'magnitude-desc', label: 'Highest Impact', field: 'magnitude', direction: 'desc' },
   { id: 'magnitude-asc', label: 'Lowest Impact', field: 'magnitude', direction: 'asc' },
-  { id: 'repute-bad', label: 'Risk First', field: 'repute', direction: 'desc' },
-  { id: 'repute-good', label: 'Beneficial First', field: 'repute', direction: 'asc' }
+  { id: 'repute-desc', label: 'Risk First', field: 'repute', direction: 'desc' },
+  { id: 'repute-asc', label: 'Beneficial First', field: 'repute', direction: 'asc' }
 ];
 
 // Popular search terms for suggestions

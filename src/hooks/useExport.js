@@ -91,7 +91,69 @@ export function useExport() {
     }
   }, [matches, stats, setExportState]);
 
-  return { exportCSV, exportJSON };
+  const exportPDF = useCallback(async () => {
+    setExportState(true, 'pdf');
+
+    try {
+      // Dynamic import to keep bundle size small
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+
+      // Title
+      doc.setFontSize(24);
+      doc.text('DNA Genesis Report', 20, 20);
+
+      doc.setFontSize(10);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 30);
+      doc.text(`Total Variants Analyzed: ${stats.totalVariants.toLocaleString()}`, 20, 35);
+      doc.text(`Significant Matches: ${matches.filter(m => (m.magnitude || 0) >= 2).length}`, 20, 40);
+
+      let yPos = 55;
+      const pageHeight = doc.internal.pageSize.height;
+
+      // Filter for notable matches first
+      const notableMatches = matches
+        .filter(m => (m.magnitude || 0) >= 2)
+        .sort((a, b) => (b.magnitude || 0) - (a.magnitude || 0));
+
+      doc.setFontSize(16);
+      doc.text('Notable Findings', 20, 50);
+
+      doc.setFontSize(12);
+
+      notableMatches.forEach((match, index) => {
+        if (yPos > pageHeight - 30) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        // Rsid and Magnitude
+        doc.setFont(undefined, 'bold');
+        doc.text(`${match.rsid} (Mag: ${match.magnitude})`, 20, yPos);
+
+        // Genotype and Repute
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        const reputeText = match.repute ? ` - Impact: ${match.repute}` : '';
+        doc.text(`Genotype: ${match.userGenotype}${reputeText}`, 20, yPos + 5);
+
+        // Summary - wrap text
+        const summary = doc.splitTextToSize(match.summary || 'No summary available.', 170);
+        doc.text(summary, 20, yPos + 10);
+
+        yPos += 15 + (summary.length * 4);
+      });
+
+      doc.save(`dna-genesis-report-${new Date().toISOString().split('T')[0]}.pdf`);
+
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setExportState(false);
+    }
+  }, [matches, stats, setExportState]);
+
+  return { exportCSV, exportJSON, exportPDF };
 }
 
 export default useExport;

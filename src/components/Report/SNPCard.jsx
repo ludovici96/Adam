@@ -26,7 +26,8 @@ export function SNPCard({ match, onClick, compact = false }) {
   } = match;
 
   const getReputeStyles = () => {
-    switch (repute) {
+    const r = repute?.toLowerCase();
+    switch (r) {
       case 'bad':
         return {
           border: 'border-red-200 dark:border-red-500/30 hover:border-red-300 dark:hover:border-red-500/50',
@@ -71,7 +72,7 @@ export function SNPCard({ match, onClick, compact = false }) {
         onClick={onClick}
       >
         <div className="flex items-center gap-3">
-          <MagnitudeBadge magnitude={magnitude} size="sm" />
+          <MagnitudeBadge magnitude={magnitude} repute={repute} size="sm" />
           <code className="text-sm font-mono text-cyan-400">{rsid}</code>
           <span className="text-xs font-mono text-[var(--text-secondary)]">
             {userGenotype}
@@ -103,9 +104,9 @@ export function SNPCard({ match, onClick, compact = false }) {
           {/* Repute Icon */}
           <div className={clsx(
             'p-2 rounded-lg',
-            repute === 'bad' && 'bg-red-500/10',
-            repute === 'good' && 'bg-emerald-500/10',
-            repute === 'neutral' && 'bg-gray-500/10'
+            repute?.toLowerCase() === 'bad' && 'bg-red-500/10',
+            repute?.toLowerCase() === 'good' && 'bg-emerald-500/10',
+            repute?.toLowerCase() === 'neutral' && 'bg-gray-500/10'
           )}>
             <Icon className={clsx('w-5 h-5', styles.iconColor)} />
           </div>
@@ -150,7 +151,7 @@ export function SNPCard({ match, onClick, compact = false }) {
         </div>
 
         {/* Magnitude */}
-        <MagnitudeBadge magnitude={magnitude} size="md" />
+        <MagnitudeBadge magnitude={magnitude} repute={repute} size="md" />
       </div>
 
       {/* Summary */}

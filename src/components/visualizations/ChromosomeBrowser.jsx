@@ -43,8 +43,8 @@ function getMagnitudeColor(magnitude) {
 }
 
 function getReputeColor(repute) {
-  if (repute === 'bad') return '#FF3B30';
-  if (repute === 'good') return '#34C759';
+  if (repute?.toLowerCase() === 'bad') return '#FF3B30';
+  if (repute?.toLowerCase() === 'good') return '#34C759';
   return '#8E8E93';
 }
 
@@ -193,8 +193,8 @@ export function ChromosomeBrowser({ matches, onSelectSNP }) {
                       <span className={clsx(
                         'text-xs px-1.5 py-0.5 rounded',
                         match.magnitude >= 3 ? 'bg-red-500/20 text-red-400' :
-                        match.magnitude >= 2 ? 'bg-amber-500/20 text-amber-400' :
-                        'bg-gray-500/20 text-gray-400'
+                          match.magnitude >= 2 ? 'bg-amber-500/20 text-amber-400' :
+                            'bg-gray-500/20 text-gray-400'
                       )}>
                         {match.magnitude?.toFixed(1) || '0'}
                       </span>

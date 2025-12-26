@@ -11,7 +11,7 @@ const initialState = {
   sidebarCollapsed: false,
 
   // Navigation
-  activeView: 'upload', // 'upload' | 'dashboard' | 'report'
+  activeView: 'upload', // 'upload' | 'dashboard' | 'report' | 'compare'
   activeCategory: 'all', // 'all' | 'health' | 'traits' | 'ancestry' | 'pharmacogenomics' | 'carrier'
 
   // Modal state
