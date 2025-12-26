@@ -25,6 +25,7 @@ const initialState = {
 
   riskScores: [],
   pharmaResults: null,
+  emotionalProfile: null,
   haplogroups: {
     yDNA: null,
     mtDNA: null
@@ -41,6 +42,7 @@ const ACTIONS = {
   SET_CATEGORIES: 'SET_CATEGORIES',
   SET_RISK_SCORES: 'SET_RISK_SCORES',
   SET_PHARMA_RESULTS: 'SET_PHARMA_RESULTS',
+  SET_EMOTIONAL_PROFILE: 'SET_EMOTIONAL_PROFILE',
   SET_HAPLOGROUPS: 'SET_HAPLOGROUPS',
   SET_DATABASE_INFO: 'SET_DATABASE_INFO',
   RESET: 'RESET'
@@ -85,6 +87,12 @@ function analysisReducer(state, action) {
       return {
         ...state,
         pharmaResults: action.payload
+      };
+
+    case ACTIONS.SET_EMOTIONAL_PROFILE:
+      return {
+        ...state,
+        emotionalProfile: action.payload
       };
 
     case ACTIONS.SET_HAPLOGROUPS:
@@ -142,6 +150,10 @@ export function AnalysisProvider({ children }) {
 
   const setPharmaResults = useCallback((results) => {
     dispatch({ type: ACTIONS.SET_PHARMA_RESULTS, payload: results });
+  }, []);
+
+  const setEmotionalProfile = useCallback((profile) => {
+    dispatch({ type: ACTIONS.SET_EMOTIONAL_PROFILE, payload: profile });
   }, []);
 
   const setHaplogroups = useCallback((haplogroups) => {
@@ -221,6 +233,7 @@ export function AnalysisProvider({ children }) {
     setCategories,
     setRiskScores,
     setPharmaResults,
+    setEmotionalProfile,
     setHaplogroups,
     setDatabaseInfo,
     categorizeMatches,
