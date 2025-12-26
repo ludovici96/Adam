@@ -38,7 +38,6 @@ const initialState = {
   exportFormat: null
 };
 
-// Action types
 const ACTIONS = {
   SET_THEME: 'SET_THEME',
   SET_RESOLVED_THEME: 'SET_RESOLVED_THEME',
@@ -55,7 +54,6 @@ const ACTIONS = {
   RESET: 'RESET'
 };
 
-// Reducer
 function uiReducer(state, action) {
   switch (action.type) {
     case ACTIONS.SET_THEME:
@@ -158,17 +156,14 @@ function uiReducer(state, action) {
 // Create context
 const UIContext = createContext(null);
 
-// Provider component
 export function UIProvider({ children }) {
   const [state, dispatch] = useReducer(uiReducer, initialState);
 
-  // Theme management
   const setTheme = useCallback((theme) => {
     dispatch({ type: ACTIONS.SET_THEME, payload: theme });
     localStorage.setItem('dna-genesis-theme', theme);
   }, []);
 
-  // Resolve system theme preference
   useEffect(() => {
     const savedTheme = localStorage.getItem('dna-genesis-theme');
     if (savedTheme) {
@@ -176,7 +171,6 @@ export function UIProvider({ children }) {
     }
   }, []);
 
-  // Listen for system theme changes
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
@@ -209,7 +203,6 @@ export function UIProvider({ children }) {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [state.theme]);
 
-  // Actions
   const toggleTheme = useCallback(() => {
     const newTheme = state.resolvedTheme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);

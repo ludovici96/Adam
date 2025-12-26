@@ -14,9 +14,7 @@ export class Matcher {
         }
     }
 
-    // Infer category from summary text using keyword matching
     inferCategory(summary, existingCategory) {
-        // If already has a valid category (not 'other'), keep it
         if (existingCategory && existingCategory !== 'other') {
             return existingCategory;
         }
@@ -25,7 +23,6 @@ export class Matcher {
 
         const text = summary.toLowerCase();
 
-        // Health keywords
         const healthKeywords = [
             'cancer', 'tumor', 'carcinoma', 'leukemia', 'lymphoma', 'melanoma',
             'diabetes', 'heart', 'cardiac', 'cardiovascular', 'stroke', 'hypertension',
@@ -38,7 +35,6 @@ export class Matcher {
             'osteoporosis', 'fracture', 'bone density'
         ];
 
-        // Pharmacogenomics keywords
         const pharmaKeywords = [
             'drug', 'medication', 'warfarin', 'clopidogrel', 'statin',
             'metabolism', 'metabolizer', 'cyp', 'enzyme',
@@ -47,7 +43,6 @@ export class Matcher {
             'pharmacokinetic', 'pharmacodynamic'
         ];
 
-        // Traits keywords
         const traitsKeywords = [
             'eye color', 'hair color', 'skin', 'pigment', 'freckling',
             'height', 'tall', 'short',
@@ -58,21 +53,18 @@ export class Matcher {
             'earwax', 'dimple', 'cleft chin', 'widow peak'
         ];
 
-        // Carrier keywords
         const carrierKeywords = [
             'carrier', 'recessive', 'inherited',
             'cystic fibrosis', 'sickle cell', 'tay-sachs',
             'hemophilia', 'thalassemia'
         ];
 
-        // Ancestry keywords
         const ancestryKeywords = [
             'ancestry', 'haplogroup', 'population', 'ethnicity',
             'european', 'african', 'asian', 'native american',
             'neanderthal', 'denisovan'
         ];
 
-        // Check in order of specificity
         if (pharmaKeywords.some(k => text.includes(k))) return 'pharmacogenomics';
         if (carrierKeywords.some(k => text.includes(k))) return 'carrier';
         if (ancestryKeywords.some(k => text.includes(k))) return 'ancestry';
@@ -98,16 +90,14 @@ export class Matcher {
             let rsid = v.rsid;
             let snpData = null;
 
-            // Direct RSID Lookup
             if (rsid) {
                 stats.rsidLookups++;
-                if (this.database[rsid.toLowerCase()]) { // Handle case-insensitivity
+                if (this.database[rsid.toLowerCase()]) {
                     snpData = this.database[rsid.toLowerCase()];
                     stats.rsidHits++;
                 }
             }
 
-            // Fallback: Coordinate Lookup
             if (!snpData) {
                 stats.coordLookups++;
                 const key = `${v.chrom}:${v.pos}`;
@@ -129,7 +119,6 @@ export class Matcher {
                 }
 
                 if (matchData) {
-                    // Infer category from summary if needed
                     const inferredCategory = this.inferCategory(matchData.summary, snpData.category);
 
                     matches.push({
@@ -146,11 +135,9 @@ export class Matcher {
             }
         }
 
-        // Deduplicate matches by RSID (keep highest magnitude for each)
         const uniqueMatches = [];
         const seenRsids = new Set();
 
-        // Sort by magnitude first so we keep the highest magnitude match for each RSID
         matches.sort((a, b) => b.magnitude - a.magnitude);
 
         for (const match of matches) {
@@ -170,4 +157,3 @@ export class Matcher {
         return genotype.split('').map(b => map[b] || b).join('');
     }
 }
-

@@ -1,12 +1,9 @@
 import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
 
-// Initial state
 const initialState = {
-  // Raw data
   variants: [],
   matches: [],
 
-  // Statistics
   stats: {
     totalVariants: 0,
     totalMatches: 0,
@@ -17,7 +14,6 @@ const initialState = {
     genotypeMisses: 0
   },
 
-  // Categorized results
   categories: {
     health: [],
     traits: [],
@@ -27,7 +23,6 @@ const initialState = {
     other: []
   },
 
-  // Advanced analysis results
   riskScores: [],
   pharmaResults: null,
   haplogroups: {
@@ -35,12 +30,10 @@ const initialState = {
     mtDNA: null
   },
 
-  // Database info
   databaseLoaded: false,
   databaseSize: 0
 };
 
-// Action types
 const ACTIONS = {
   SET_VARIANTS: 'SET_VARIANTS',
   SET_MATCHES: 'SET_MATCHES',
@@ -53,7 +46,6 @@ const ACTIONS = {
   RESET: 'RESET'
 };
 
-// Reducer
 function analysisReducer(state, action) {
   switch (action.type) {
     case ACTIONS.SET_VARIANTS:
@@ -123,14 +115,11 @@ function analysisReducer(state, action) {
   }
 }
 
-// Create context
 const AnalysisContext = createContext(null);
 
-// Provider component
 export function AnalysisProvider({ children }) {
   const [state, dispatch] = useReducer(analysisReducer, initialState);
 
-  // Actions
   const setVariants = useCallback((variants) => {
     dispatch({ type: ACTIONS.SET_VARIANTS, payload: variants });
   }, []);
@@ -167,7 +156,6 @@ export function AnalysisProvider({ children }) {
     dispatch({ type: ACTIONS.RESET });
   }, []);
 
-  // Categorize matches by category
   const categorizeMatches = useCallback((matches) => {
     const categories = {
       health: [],
@@ -187,7 +175,6 @@ export function AnalysisProvider({ children }) {
       }
     });
 
-    // Sort each category by magnitude (descending)
     Object.keys(categories).forEach(key => {
       categories[key].sort((a, b) => (b.magnitude || 0) - (a.magnitude || 0));
     });
@@ -196,13 +183,11 @@ export function AnalysisProvider({ children }) {
     return categories;
   }, [setCategories]);
 
-  // Computed values
   const computed = useMemo(() => {
     const notableFindings = state.matches.filter(m => (m.magnitude || 0) >= 2);
     const positiveFindings = state.matches.filter(m => m.repute?.toLowerCase() === 'good');
     const negativeFindings = state.matches.filter(m => m.repute?.toLowerCase() === 'bad');
 
-    // Magnitude distribution
     const magnitudeDistribution = {
       critical: state.matches.filter(m => (m.magnitude || 0) >= 4).length,
       high: state.matches.filter(m => (m.magnitude || 0) >= 3 && (m.magnitude || 0) < 4).length,
@@ -211,7 +196,6 @@ export function AnalysisProvider({ children }) {
       benign: state.matches.filter(m => (m.magnitude || 0) < 1).length
     };
 
-    // Top findings (highest magnitude)
     const topFindings = [...state.matches]
       .sort((a, b) => (b.magnitude || 0) - (a.magnitude || 0))
       .slice(0, 10);
@@ -229,13 +213,8 @@ export function AnalysisProvider({ children }) {
   }, [state.matches]);
 
   const value = {
-    // State
     ...state,
-
-    // Computed
     ...computed,
-
-    // Actions
     setVariants,
     setMatches,
     setStats,
@@ -255,7 +234,6 @@ export function AnalysisProvider({ children }) {
   );
 }
 
-// Hook to use the context
 export function useAnalysis() {
   const context = useContext(AnalysisContext);
   if (!context) {

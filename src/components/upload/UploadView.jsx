@@ -14,7 +14,6 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
     APP_STATES.ANALYZING
   ].includes(appState);
 
-  // Dynamic features based on API availability
   const snpCount = useAPI && apiStats?.totalCount
     ? `${(apiStats.totalCount / 1000000).toFixed(1)}M+ SNPs`
     : '70,000+ SNPs';
@@ -39,7 +38,6 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
 
   return (
     <div className="flex flex-col items-center">
-      {/* Hero Section */}
       {!isProcessing && (
         <>
           <motion.div
@@ -47,7 +45,6 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            {/* Privacy Badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -58,7 +55,6 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
               <span>Your DNA data never leaves your browser</span>
             </motion.div>
 
-            {/* Title */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
               <span className="text-[var(--text-primary)]">Discover Your </span>
               <span className="bg-gradient-to-r from-stone-600 to-stone-500 bg-clip-text text-transparent">
@@ -66,14 +62,12 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
               </span>
             </h1>
 
-            {/* Subtitle */}
             <p className="text-lg sm:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto">
               Upload your raw DNA file from 23andMe, AncestryDNA, or FTDNA.
               Get instant insights about health, traits, and ancestry.
             </p>
           </motion.div>
 
-          {/* Upload Zone */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -83,7 +77,6 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
             <DropZone onFileSelect={onFileSelect} />
           </motion.div>
 
-          {/* Features */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -111,7 +104,6 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
         </>
       )}
 
-      {/* Processing State */}
       {isProcessing && (
         <ProcessingIndicator
           stage={appState}

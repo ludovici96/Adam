@@ -38,39 +38,30 @@ export function ReportView({ onBack, onExport }) {
   const [chartFilteredMatches, setChartFilteredMatches] = useState(null);
   const filterBarRef = React.useRef(null);
 
-  // Handler for when user clicks on a chart bucket
   const handleChartBucketClick = (bucketMatches) => {
     setChartFilteredMatches(bucketMatches);
     setVisibleCount(ITEMS_PER_PAGE);
-    // Scroll to the filter bar / results section
     setTimeout(() => {
       filterBarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
   };
 
-  // Clear chart filter
   const clearChartFilter = () => {
     setChartFilteredMatches(null);
   };
 
-  // Reset visible count when filters change
   useEffect(() => {
     setVisibleCount(ITEMS_PER_PAGE);
   }, [filters, activeCategory, sort]);
 
-  // Filter and sort matches
   const filteredMatches = useMemo(() => {
-    // If chart filter is active, use those matches
     let result = chartFilteredMatches ? [...chartFilteredMatches] : [...matches];
 
-    // Only apply other filters if not using chart filter
     if (!chartFilteredMatches) {
-      // Filter by category
       if (activeCategory && activeCategory !== 'all') {
         result = categories[activeCategory] || [];
       }
 
-      // Filter by search
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         result = result.filter(match =>
@@ -79,18 +70,15 @@ export function ReportView({ onBack, onExport }) {
         );
       }
 
-      // Filter by repute
       if (filters.repute && filters.repute !== 'all') {
         result = result.filter(match => match.repute?.toLowerCase() === filters.repute.toLowerCase());
       }
 
-      // Filter by magnitude
       if (filters.magnitudeMin > 0) {
         result = result.filter(match => (match.magnitude || 0) >= filters.magnitudeMin);
       }
     }
 
-    // Sort
     result.sort((a, b) => {
       if (sort.field === 'magnitude') {
         const diff = (b.magnitude || 0) - (a.magnitude || 0);
@@ -111,7 +99,6 @@ export function ReportView({ onBack, onExport }) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button
@@ -134,7 +121,6 @@ export function ReportView({ onBack, onExport }) {
         </div>
       </div>
 
-      {/* Visualizations Toggle */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => setShowVisualizations(!showVisualizations)}
@@ -156,7 +142,6 @@ export function ReportView({ onBack, onExport }) {
         </button>
       </div>
 
-      {/* Visualizations Section */}
       <AnimatePresence>
         {showVisualizations && (
           <motion.div
@@ -166,10 +151,8 @@ export function ReportView({ onBack, onExport }) {
             className="overflow-hidden"
           >
             <div className="space-y-6">
-              {/* Chromosome Browser - Full Width */}
               <ChromosomeBrowser matches={matches} onSelectSNP={selectSNP} />
 
-              {/* Charts Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <MagnitudeChart matches={matches} onBucketClick={handleChartBucketClick} />
                 <CategoryChart categories={categories} />
@@ -179,7 +162,6 @@ export function ReportView({ onBack, onExport }) {
         )}
       </AnimatePresence>
 
-      {/* Filter Bar */}
       <div ref={filterBarRef}>
         <FilterBar
           resultCount={filteredMatches.length}
@@ -188,7 +170,6 @@ export function ReportView({ onBack, onExport }) {
         />
       </div>
 
-      {/* Results */}
       <AnimatePresence mode="wait">
         {filteredMatches.length === 0 ? (
           <motion.div
@@ -227,7 +208,6 @@ export function ReportView({ onBack, onExport }) {
         )}
       </AnimatePresence>
 
-      {/* Load more button for large lists */}
       {filteredMatches.length > visibleCount && (
         <div className="flex flex-col items-center gap-3 pt-4">
           <p className="text-sm text-[var(--text-secondary)]">
@@ -244,14 +224,12 @@ export function ReportView({ onBack, onExport }) {
         </div>
       )}
 
-      {/* All results loaded indicator */}
       {filteredMatches.length > 0 && filteredMatches.length <= visibleCount && (
         <p className="text-center text-sm text-[var(--text-secondary)] pt-4">
           Showing all {filteredMatches.length} results
         </p>
       )}
 
-      {/* Detail Modal */}
       {selectedSNP && (
         <SNPDetailModal
           match={selectedSNP}

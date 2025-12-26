@@ -1,24 +1,19 @@
 import React, { useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-// Context Providers
 import { AppProvider, useApp } from './context/AppContext';
 import { AnalysisProvider, useAnalysis } from './context/AnalysisContext';
 import { UIProvider, useUI } from './context/UIContext';
 
-// Layout
 import { AppShell } from './components/layout/AppShell';
 
-// Views
 import { UploadView } from './components/upload/UploadView';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { ReportView } from './components/report/ReportView';
 import { CompareView } from './components/compare/CompareView';
 
-// Onboarding
 import { OnboardingFlow, useOnboarding } from './components/onboarding/OnboardingFlow';
 
-// Hooks
 import { useAnalysisFlow } from './hooks/useAnalysis';
 import { useExport } from './hooks/useExport';
 
@@ -41,20 +36,17 @@ function AppContent() {
   const { exportCSV, exportJSON, exportPDF } = useExport();
   const { showOnboarding, completeOnboarding } = useOnboarding();
 
-  // Handle file selection
   const handleFileSelect = useCallback((file, fileType) => {
     setFile(file, fileType);
     runAnalysis(file, fileType);
   }, [setFile, runAnalysis]);
 
-  // Handle reset
   const handleReset = useCallback(() => {
     reset();
     resetAnalysis();
     setActiveView('upload');
   }, [reset, resetAnalysis, setActiveView]);
 
-  // Handle export
   const handleExport = useCallback((format = 'csv') => {
     if (format === 'json') {
       exportJSON();
@@ -65,24 +57,19 @@ function AppContent() {
     }
   }, [exportCSV, exportJSON, exportPDF]);
 
-  // Determine which view to show
   const getView = () => {
-    // If user explicitly selected compare view, allow it even if analysis isn't complete (since it's independent)
     if (activeView === 'compare') {
       return 'compare';
     }
 
-    // If still processing, show upload view with processing indicator
     if ([APP_STATES.IDLE, APP_STATES.UPLOADING, APP_STATES.PARSING, APP_STATES.ANALYZING].includes(appState)) {
       return 'upload';
     }
 
-    // If complete, use activeView
     if (appState === APP_STATES.COMPLETE) {
       return activeView;
     }
 
-    // Error state - show upload view
     return 'upload';
   };
 
@@ -90,7 +77,6 @@ function AppContent() {
 
   return (
     <>
-      {/* Onboarding Flow */}
       <AnimatePresence>
         {showOnboarding && (
           <OnboardingFlow onComplete={completeOnboarding} />

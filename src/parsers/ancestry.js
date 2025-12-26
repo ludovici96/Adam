@@ -21,29 +21,23 @@ export class AncestryParser {
       const trimmed = line.trim();
       if (!trimmed) continue;
 
-      // Skip comments
       if (trimmed.startsWith('#')) continue;
 
-      // Detect header line
       if (trimmed.toLowerCase().startsWith('rsid')) {
         headerFound = true;
         continue;
       }
 
-      // Skip lines before header
       if (!headerFound) continue;
 
-      // Split by tab
       const cols = trimmed.split('\t');
       if (cols.length < 5) continue;
 
       const [rsid, chromosome, position, allele1, allele2] = cols;
 
-      // Skip no-calls
       if (allele1 === '0' || allele2 === '0') continue;
       if (!allele1 || !allele2) continue;
 
-      // Skip internal IDs
       if (rsid.startsWith('i') || !rsid.startsWith('rs')) continue;
 
       const genotype = (allele1 + allele2).toUpperCase();
@@ -63,16 +57,11 @@ export class AncestryParser {
     return chrom.replace(/^chr/i, '').toUpperCase();
   }
 
-  /**
-   * Detect if file content is AncestryDNA format
-   */
   static detect(firstLines) {
     const content = firstLines.join('\n').toLowerCase();
 
-    // AncestryDNA files have specific header
     if (content.includes('ancestrydna')) return true;
 
-    // Check for header with 5 columns: rsid, chromosome, position, allele1, allele2
     const headerLine = firstLines.find(l =>
       l.toLowerCase().includes('rsid') &&
       l.toLowerCase().includes('allele1') &&
@@ -81,7 +70,6 @@ export class AncestryParser {
 
     if (headerLine) return true;
 
-    // Check for tab-separated format with 5 columns where last 2 are single chars
     const dataLine = firstLines.find(l => l.startsWith('rs') && l.split('\t').length >= 5);
     if (dataLine) {
       const cols = dataLine.split('\t');

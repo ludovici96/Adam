@@ -3,7 +3,6 @@ import { useApp } from '../context/AppContext';
 import { useAnalysis as useAnalysisContext } from '../context/AnalysisContext';
 import { useUI } from '../context/UIContext';
 
-// Import parser factory and matcher
 import { ParserFactory, FILE_FORMATS } from '../parsers/index.js';
 import { Matcher } from '../analysis/matcher';
 import { RiskCalculator } from '../analysis/RiskCalculator';
@@ -33,7 +32,6 @@ export function useAnalysisFlow() {
   const [useAPI, setUseAPI] = useState(null);
   const [apiStats, setApiStats] = useState(null);
 
-  // Check API availability on mount
   useEffect(() => {
     apiClient.checkAvailability().then(available => {
       setUseAPI(available);
@@ -54,7 +52,7 @@ export function useAnalysisFlow() {
 
       setProgress({ percent: 70, message: 'Processing results...' });
 
-      setVariants([]); // Server doesn't return all variants
+      setVariants([]);
       setMatches(result.matches);
       setStats({
         totalVariants: result.stats.totalVariants,
@@ -67,10 +65,8 @@ export function useAnalysisFlow() {
         source: 'server'
       });
 
-      // Categorize matches
       categorizeMatches(result.matches);
 
-      // Run health risk calculator on client
       setProgress({ percent: 85, message: 'Calculating health risk scores...' });
       const riskCalculator = new RiskCalculator();
       const riskScores = riskCalculator.calculateAllRiskScores(result.matches);
@@ -97,15 +93,12 @@ export function useAnalysisFlow() {
 
   const runAnalysisLocal = useCallback(async (file, fileType) => {
     try {
-      // Stage 1: Parsing with auto-detection
       setAppState(APP_STATES.PARSING);
       setProgress({ stage: 'parsing', percent: 0, message: 'Detecting file format...' });
 
-      // Use ParserFactory for auto-detection and parsing
       const parseResult = await ParserFactory.parse(file);
       const { variants, format, stats: parseStats } = parseResult;
 
-      // Show detected format to user
       const formatNames = {
         [FILE_FORMATS.VCF]: 'VCF',
         [FILE_FORMATS.TWENTYTHREE]: '23andMe',
@@ -121,10 +114,8 @@ export function useAnalysisFlow() {
         message: `Found ${variants.length.toLocaleString()} variants (${formatName} format)`
       });
 
-      // Stage 2: Loading database
       setProgress({ stage: 'analyzing', percent: 60, message: 'Loading SNPedia database...' });
 
-      // Fetch SNPedia database
       const dbResponse = await fetch('/data/snpedia.json');
       if (!dbResponse.ok) {
         throw new Error('Failed to load SNPedia database. Please ensure the database file exists.');
@@ -134,14 +125,12 @@ export function useAnalysisFlow() {
       setDatabaseInfo({ size: Object.keys(database).length, source: 'local' });
       setProgress({ percent: 70, message: 'Matching variants...' });
 
-      // Stage 3: Matching
       setAppState(APP_STATES.ANALYZING);
       const matcher = new Matcher(database);
       const result = matcher.match(variants);
 
       setProgress({ percent: 80, message: 'Categorizing results...' });
 
-      // Store results
       setMatches(result.matches);
       setStats({
         totalVariants: variants.length,
@@ -149,25 +138,20 @@ export function useAnalysisFlow() {
         ...result.stats
       });
 
-      // Categorize matches
       categorizeMatches(result.matches);
 
-      // Stage 4: Advanced Analysis
       setProgress({ percent: 85, message: 'Calculating health risk scores...' });
 
-      // Run health risk calculator
       const riskCalculator = new RiskCalculator();
       const riskScores = riskCalculator.calculateAllRiskScores(result.matches);
       setRiskScores(riskScores);
 
       setProgress({ percent: 92, message: 'Analyzing drug interactions...' });
 
-      // Run pharmacogenomics analyzer
       const pharmaAnalyzer = new PharmaAnalyzer();
       const pharmaResults = pharmaAnalyzer.analyze(result.matches);
       setPharmaResults(pharmaResults);
 
-      // Complete
       setProgress({ percent: 100, message: 'Analysis complete!' });
       setAppState(APP_STATES.COMPLETE);
       setActiveView('dashboard');
@@ -191,7 +175,6 @@ export function useAnalysisFlow() {
     APP_STATES
   ]);
 
-  // Main analysis function - uses API if available, otherwise local
   const runAnalysis = useCallback(async (file, fileType) => {
     if (useAPI) {
       console.log('Using server API for analysis (2.4M SNPs)');
@@ -211,4 +194,3 @@ export function useAnalysisFlow() {
 }
 
 export default useAnalysisFlow;
-

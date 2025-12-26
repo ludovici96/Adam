@@ -27,7 +27,6 @@ const initialState = {
   endTime: null
 };
 
-// Action types
 const ACTIONS = {
   SET_FILE: 'SET_FILE',
   SET_STATE: 'SET_STATE',
@@ -36,7 +35,6 @@ const ACTIONS = {
   RESET: 'RESET'
 };
 
-// Reducer
 function appReducer(state, action) {
   switch (action.type) {
     case ACTIONS.SET_FILE:
@@ -86,11 +84,9 @@ function appReducer(state, action) {
 // Create context
 const AppContext = createContext(null);
 
-// Provider component
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // Actions
   const setFile = useCallback((file, fileType) => {
     dispatch({ type: ACTIONS.SET_FILE, payload: { file, fileType } });
   }, []);
@@ -111,7 +107,6 @@ export function AppProvider({ children }) {
     dispatch({ type: ACTIONS.RESET });
   }, []);
 
-  // Computed values
   const isProcessing = [
     APP_STATES.UPLOADING,
     APP_STATES.PARSING,

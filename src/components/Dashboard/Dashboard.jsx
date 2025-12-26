@@ -43,7 +43,6 @@ export function Dashboard({ onViewReport, onReset, onSelectSNP }) {
       animate="visible"
       className="space-y-8"
     >
-      {/* Header */}
       <motion.div variants={itemVariants} className="text-center">
         <h2 className={clsx(
           'text-3xl sm:text-4xl font-bold',
@@ -59,7 +58,6 @@ export function Dashboard({ onViewReport, onReset, onSelectSNP }) {
         )}
       </motion.div>
 
-      {/* Summary Cards */}
       <motion.div variants={itemVariants}>
         <SummaryCards
           totalVariants={stats.totalVariants}
@@ -70,7 +68,6 @@ export function Dashboard({ onViewReport, onReset, onSelectSNP }) {
         />
       </motion.div>
 
-      {/* Quick Insights */}
       <motion.div variants={itemVariants}>
         <QuickInsights
           matches={matches}
@@ -79,13 +76,11 @@ export function Dashboard({ onViewReport, onReset, onSelectSNP }) {
         />
       </motion.div>
 
-      {/* Health Risks & Drug Interactions Grid */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <HealthRisks />
         <DrugInteractions />
       </motion.div>
 
-      {/* Actions */}
       <motion.div
         variants={itemVariants}
         className="flex flex-col sm:flex-row items-center justify-center gap-4"
@@ -110,7 +105,6 @@ export function Dashboard({ onViewReport, onReset, onSelectSNP }) {
         </Button>
       </motion.div>
 
-      {/* Category Distribution (optional visualization) */}
       <motion.div variants={itemVariants}>
         <CategoryDistribution />
       </motion.div>
@@ -118,7 +112,6 @@ export function Dashboard({ onViewReport, onReset, onSelectSNP }) {
   );
 }
 
-// Category distribution mini-chart
 function CategoryDistribution() {
   const { categories } = useAnalysis();
 
@@ -145,7 +138,6 @@ function CategoryDistribution() {
         Results by Category
       </h3>
 
-      {/* Bar chart */}
       <div className="h-4 rounded-full overflow-hidden bg-gray-200 dark:bg-white/5 flex">
         {categoryData.map((category, index) => (
           <motion.div
@@ -158,7 +150,6 @@ function CategoryDistribution() {
         ))}
       </div>
 
-      {/* Legend */}
       <div className="mt-4 flex flex-wrap gap-4">
         {categoryData.map((category) => (
           <div key={category.name} className="flex items-center gap-2">
