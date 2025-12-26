@@ -41,6 +41,7 @@ yarn-error.log*
 !README.txt
 clinvar.json
 clinvar.vcf.gz
+*.zip
 
 # Large database files (can be regenerated)
 # Uncomment if you don't want to track the SNPedia database
