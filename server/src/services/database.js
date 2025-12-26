@@ -115,6 +115,7 @@ class DatabaseService {
 
             await new Promise((resolve, reject) => {
                 let added = 0;
+                let overlayed = 0;
                 let processed = 0;
                 let headers = null;
 
@@ -155,6 +156,7 @@ class DatabaseService {
                         const existing = this.database.get(rsidLower);
                         if (!existing.gwasAssociations) {
                             existing.gwasAssociations = [];
+                            overlayed++;
                         }
                         existing.gwasAssociations.push(gwasInfo);
                     } else {
@@ -182,6 +184,7 @@ class DatabaseService {
                 rl.on('close', () => {
                     this.stats.gwasCount = added;
                     console.log(`  Added ${added.toLocaleString()} unique GWAS entries`);
+                    console.log(`  Overlayed GWAS onto ${overlayed.toLocaleString()} existing SNPs`);
                     resolve();
                 });
 
