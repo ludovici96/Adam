@@ -72,7 +72,6 @@ export function Dashboard({ onViewReport, onReset, onSelectSNP }) {
         <QuickInsights
           matches={matches}
           maxItems={5}
-          onSelectSNP={onSelectSNP}
         />
       </motion.div>
 
