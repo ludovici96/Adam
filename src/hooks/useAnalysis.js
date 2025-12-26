@@ -5,6 +5,7 @@ import { useUI } from '../context/UIContext';
 
 import { RiskCalculator } from '../analysis/RiskCalculator';
 import { PharmaAnalyzer } from '../analysis/PharmaAnalyzer';
+import { EmotionalAnalyzer } from '../analysis/EmotionalAnalyzer';
 import { apiClient } from '../services/api';
 
 export function useAnalysisFlow() {
@@ -22,7 +23,8 @@ export function useAnalysisFlow() {
     categorizeMatches,
     setDatabaseInfo,
     setRiskScores,
-    setPharmaResults
+    setPharmaResults,
+    setEmotionalProfile
   } = useAnalysisContext();
 
   const { setActiveView } = useUI();
@@ -64,10 +66,15 @@ export function useAnalysisFlow() {
       const riskScores = riskCalculator.calculateAllRiskScores(result.matches);
       setRiskScores(riskScores);
 
-      setProgress({ percent: 92, message: 'Analyzing drug interactions...' });
+      setProgress({ percent: 88, message: 'Analyzing drug interactions...' });
       const pharmaAnalyzer = new PharmaAnalyzer();
       const pharmaResults = pharmaAnalyzer.analyze(result.matches);
       setPharmaResults(pharmaResults);
+
+      setProgress({ percent: 95, message: 'Analyzing personality traits...' });
+      const emotionalAnalyzer = new EmotionalAnalyzer();
+      const emotionalProfile = emotionalAnalyzer.analyze(result.matches);
+      setEmotionalProfile(emotionalProfile);
 
       setProgress({ percent: 100, message: 'Analysis complete!' });
       setAppState(APP_STATES.COMPLETE);
@@ -80,7 +87,7 @@ export function useAnalysisFlow() {
   }, [
     setAppState, setProgress, setError, setVariants, setMatches, setStats,
     categorizeMatches, setDatabaseInfo, setRiskScores, setPharmaResults,
-    setActiveView, APP_STATES, apiStats
+    setEmotionalProfile, setActiveView, APP_STATES, apiStats
   ]);
 
   return {

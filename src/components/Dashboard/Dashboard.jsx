@@ -6,6 +6,7 @@ import { SummaryCards } from './SummaryCards';
 import { QuickInsights } from './QuickInsights';
 import { HealthRisks } from './HealthRisks';
 import { DrugInteractions } from './DrugInteractions';
+import { EmotionalRadar } from './EmotionalRadar';
 import { Button } from '../common/Button';
 import { useAnalysis } from '../../context/AnalysisContext';
 import { useApp } from '../../context/AppContext';
@@ -78,6 +79,10 @@ export function Dashboard({ onViewReport, onReset, onSelectSNP }) {
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <HealthRisks />
         <DrugInteractions />
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
+        <EmotionalRadar />
       </motion.div>
 
       <motion.div
