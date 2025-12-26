@@ -26,6 +26,16 @@ export function SNPCard({ match, onClick, compact = false }) {
   } = match;
 
   const getReputeStyles = () => {
+    // Magnitude 0 or very low = always neutral, regardless of repute
+    if (magnitude === 0 || magnitude < 0.5) {
+      return {
+        border: 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20',
+        bg: 'bg-gray-50 dark:bg-white/5',
+        icon: Minus,
+        iconColor: 'text-gray-500 dark:text-gray-400'
+      };
+    }
+
     const r = repute?.toLowerCase();
     switch (r) {
       case 'bad':
@@ -33,14 +43,14 @@ export function SNPCard({ match, onClick, compact = false }) {
           border: 'border-red-200 dark:border-red-500/30 hover:border-red-300 dark:hover:border-red-500/50',
           bg: 'bg-red-50 dark:bg-red-500/5',
           icon: AlertTriangle,
-          iconColor: 'text-red-500 dark:text-red-400'
+          iconColor: 'text-red-600 dark:text-red-400'
         };
       case 'good':
         return {
-          border: 'border-emerald-200 dark:border-emerald-500/30 hover:border-emerald-300 dark:hover:border-emerald-500/50',
-          bg: 'bg-emerald-50 dark:bg-emerald-500/5',
+          border: 'border-teal-200 dark:border-teal-500/30 hover:border-teal-300 dark:hover:border-teal-500/50',
+          bg: 'bg-teal-50 dark:bg-teal-500/5',
           icon: ThumbsUp,
-          iconColor: 'text-emerald-500 dark:text-emerald-400'
+          iconColor: 'text-teal-600 dark:text-teal-400'
         };
       default:
         return {

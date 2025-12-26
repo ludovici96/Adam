@@ -35,6 +35,23 @@ export function ReportView({ onBack, onExport }) {
 
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const [showVisualizations, setShowVisualizations] = useState(true);
+  const [chartFilteredMatches, setChartFilteredMatches] = useState(null);
+  const filterBarRef = React.useRef(null);
+
+  // Handler for when user clicks on a chart bucket
+  const handleChartBucketClick = (bucketMatches) => {
+    setChartFilteredMatches(bucketMatches);
+    setVisibleCount(ITEMS_PER_PAGE);
+    // Scroll to the filter bar / results section
+    setTimeout(() => {
+      filterBarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  // Clear chart filter
+  const clearChartFilter = () => {
+    setChartFilteredMatches(null);
+  };
 
   // Reset visible count when filters change
   useEffect(() => {
@@ -43,30 +60,34 @@ export function ReportView({ onBack, onExport }) {
 
   // Filter and sort matches
   const filteredMatches = useMemo(() => {
-    let result = [...matches];
+    // If chart filter is active, use those matches
+    let result = chartFilteredMatches ? [...chartFilteredMatches] : [...matches];
 
-    // Filter by category
-    if (activeCategory && activeCategory !== 'all') {
-      result = categories[activeCategory] || [];
-    }
+    // Only apply other filters if not using chart filter
+    if (!chartFilteredMatches) {
+      // Filter by category
+      if (activeCategory && activeCategory !== 'all') {
+        result = categories[activeCategory] || [];
+      }
 
-    // Filter by search
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      result = result.filter(match =>
-        match.rsid?.toLowerCase().includes(searchLower) ||
-        match.summary?.toLowerCase().includes(searchLower)
-      );
-    }
+      // Filter by search
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        result = result.filter(match =>
+          match.rsid?.toLowerCase().includes(searchLower) ||
+          match.summary?.toLowerCase().includes(searchLower)
+        );
+      }
 
-    // Filter by repute
-    if (filters.repute && filters.repute !== 'all') {
-      result = result.filter(match => match.repute?.toLowerCase() === filters.repute.toLowerCase());
-    }
+      // Filter by repute
+      if (filters.repute && filters.repute !== 'all') {
+        result = result.filter(match => match.repute?.toLowerCase() === filters.repute.toLowerCase());
+      }
 
-    // Filter by magnitude
-    if (filters.magnitudeMin > 0) {
-      result = result.filter(match => (match.magnitude || 0) >= filters.magnitudeMin);
+      // Filter by magnitude
+      if (filters.magnitudeMin > 0) {
+        result = result.filter(match => (match.magnitude || 0) >= filters.magnitudeMin);
+      }
     }
 
     // Sort
@@ -86,38 +107,30 @@ export function ReportView({ onBack, onExport }) {
     });
 
     return result;
-  }, [matches, categories, activeCategory, filters, sort]);
+  }, [matches, categories, activeCategory, filters, sort, chartFilteredMatches]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<ArrowLeft className="w-4 h-4" />}
-          onClick={onBack}
-        >
-          Back to Summary
-        </Button>
-
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
-            variant="secondary"
+            variant="ghost"
             size="sm"
-            icon={<Download className="w-4 h-4" />}
-            onClick={() => onExport?.('csv')}
+            icon={<ArrowLeft className="w-4 h-4" />}
+            onClick={onBack}
           >
-            Export CSV
+            Back to Summary
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<FileText className="w-4 h-4" />}
-            onClick={() => window.print()}
-          >
-            Print
-          </Button>
+          {chartFilteredMatches && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={clearChartFilter}
+            >
+              Clear Filter ({chartFilteredMatches.length} shown)
+            </Button>
+          )}
         </div>
       </div>
 
@@ -129,7 +142,7 @@ export function ReportView({ onBack, onExport }) {
             'flex items-center gap-2 px-4 py-2 rounded-xl transition-colors',
             'text-sm font-medium',
             showVisualizations
-              ? 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/20'
+              ? 'bg-stone-500/10 text-stone-700 dark:text-stone-300 border border-stone-500/20'
               : 'bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] border border-gray-200 dark:border-white/10'
           )}
         >
@@ -158,7 +171,7 @@ export function ReportView({ onBack, onExport }) {
 
               {/* Charts Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <MagnitudeChart matches={matches} />
+                <MagnitudeChart matches={matches} onBucketClick={handleChartBucketClick} />
                 <CategoryChart categories={categories} />
               </div>
             </div>
@@ -167,7 +180,13 @@ export function ReportView({ onBack, onExport }) {
       </AnimatePresence>
 
       {/* Filter Bar */}
-      <FilterBar resultCount={filteredMatches.length} />
+      <div ref={filterBarRef}>
+        <FilterBar
+          resultCount={filteredMatches.length}
+          chartFilteredMatches={chartFilteredMatches}
+          onClearChartFilter={clearChartFilter}
+        />
+      </div>
 
       {/* Results */}
       <AnimatePresence mode="wait">
@@ -191,7 +210,7 @@ export function ReportView({ onBack, onExport }) {
           </motion.div>
         ) : (
           <motion.div
-            key={`results-${sort.field}-${sort.direction}-${activeCategory}`}
+            key={`results-${sort.field}-${sort.direction}-${activeCategory}-${filters.search}-${chartFilteredMatches?.length || 0}`}
             variants={containerVariants}
             initial="hidden"
             animate="visible"

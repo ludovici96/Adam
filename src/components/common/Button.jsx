@@ -15,14 +15,14 @@ export function Button({
   type = 'button',
   ...props
 }) {
-  const baseStyles = 'inline-flex items-center justify-center gap-2 font-medium rounded-full cursor-pointer transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseStyles = 'inline-flex items-center justify-center gap-2 font-medium rounded-full cursor-pointer transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400 disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variants = {
-    primary: 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-white shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/30',
-    secondary: 'bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20',
-    ghost: 'bg-transparent hover:bg-white/10',
-    danger: 'bg-red-500 text-white shadow-lg shadow-red-500/25 hover:bg-red-600',
-    success: 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600'
+    primary: 'bg-stone-800 dark:bg-stone-700 text-white shadow-lg shadow-stone-800/25 hover:bg-stone-900 dark:hover:bg-stone-600 hover:shadow-xl hover:shadow-stone-800/30',
+    secondary: 'bg-white/10 backdrop-blur-sm border border-stone-300 dark:border-white/20 hover:bg-stone-100 dark:hover:bg-white/20 text-stone-700 dark:text-white',
+    ghost: 'bg-transparent hover:bg-stone-100 dark:hover:bg-white/10 text-stone-600 dark:text-stone-300',
+    danger: 'bg-red-700 text-white shadow-lg shadow-red-700/25 hover:bg-red-800',
+    success: 'bg-teal-600 text-white shadow-lg shadow-teal-600/25 hover:bg-teal-700'
   };
 
   const sizes = {

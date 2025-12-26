@@ -67,6 +67,10 @@ export function MagnitudeChart({ matches, onBucketClick }) {
           value={distribution.buckets.critical.count + distribution.buckets.high.count}
           color="text-red-400"
           bgColor="bg-red-500/10"
+          onClick={() => onBucketClick?.([
+            ...distribution.buckets.critical.matches,
+            ...distribution.buckets.high.matches
+          ])}
         />
         <StatCard
           icon={<Info className="w-4 h-4" />}
@@ -74,13 +78,18 @@ export function MagnitudeChart({ matches, onBucketClick }) {
           value={distribution.buckets.moderate.count}
           color="text-amber-400"
           bgColor="bg-amber-500/10"
+          onClick={() => onBucketClick?.(distribution.buckets.moderate.matches)}
         />
         <StatCard
           icon={<CheckCircle className="w-4 h-4" />}
           label="Common"
           value={distribution.buckets.low.count + distribution.buckets.benign.count}
-          color="text-emerald-400"
-          bgColor="bg-emerald-500/10"
+          color="text-teal-400"
+          bgColor="bg-teal-500/10"
+          onClick={() => onBucketClick?.([
+            ...distribution.buckets.low.matches,
+            ...distribution.buckets.benign.matches
+          ])}
         />
       </div>
 
@@ -190,13 +199,19 @@ export function MagnitudeChart({ matches, onBucketClick }) {
   );
 }
 
-function StatCard({ icon, label, value, color, bgColor }) {
+function StatCard({ icon, label, value, color, bgColor, onClick }) {
   return (
-    <div className={clsx(
-      'p-3 rounded-xl text-center',
-      bgColor,
-      'border border-gray-200 dark:border-white/5'
-    )}>
+    <button
+      onClick={onClick}
+      className={clsx(
+        'p-3 rounded-xl text-center w-full',
+        bgColor,
+        'border border-gray-200 dark:border-white/5',
+        'transition-all duration-200 cursor-pointer',
+        'hover:scale-[1.02] hover:shadow-md',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400'
+      )}
+    >
       <div className={clsx('flex items-center justify-center gap-1 mb-1', color)}>
         {icon}
       </div>
@@ -206,7 +221,7 @@ function StatCard({ icon, label, value, color, bgColor }) {
       <div className="text-xs text-[var(--text-secondary)]">
         {label}
       </div>
-    </div>
+    </button>
   );
 }
 

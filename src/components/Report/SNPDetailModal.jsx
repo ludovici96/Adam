@@ -124,12 +124,23 @@ export function SNPDetailModal({
   };
 
   const getReputeInfo = () => {
+    // Magnitude 0 = always neutral
+    if (magnitude === 0 || magnitude < 0.5) {
+      return {
+        icon: Minus,
+        color: 'text-gray-400',
+        bg: 'bg-gray-500/10',
+        label: 'Neutral',
+        description: 'This variant has minimal or no known clinical significance.'
+      };
+    }
+
     const r = repute?.toLowerCase();
     switch (r) {
       case 'bad':
         return {
           icon: AlertTriangle,
-          color: 'text-red-400',
+          color: 'text-red-500',
           bg: 'bg-red-500/10',
           label: 'Risk Factor',
           description: 'This variant is associated with increased risk or negative effects.'
@@ -137,8 +148,8 @@ export function SNPDetailModal({
       case 'good':
         return {
           icon: ThumbsUp,
-          color: 'text-emerald-400',
-          bg: 'bg-emerald-500/10',
+          color: 'text-teal-500',
+          bg: 'bg-teal-500/10',
           label: 'Protective',
           description: 'This variant is associated with beneficial effects or reduced risk.'
         };
@@ -156,10 +167,31 @@ export function SNPDetailModal({
   const reputeInfo = getReputeInfo();
   const ReputeIcon = reputeInfo.icon;
 
-  const getMagnitudeDescription = (mag) => {
-    if (mag >= 4) return 'High clinical significance - consult a healthcare professional';
-    if (mag >= 3) return 'Moderate clinical significance';
-    if (mag >= 2) return 'Notable finding worth reviewing';
+  const getMagnitudeDescription = (mag, rep) => {
+    const r = rep?.toLowerCase();
+
+    // For good/beneficial traits
+    if (r === 'good') {
+      if (mag >= 4) return 'Strong beneficial effect - highly significant positive trait';
+      if (mag >= 3) return 'Moderate beneficial effect';
+      if (mag >= 2) return 'Notable positive finding';
+      if (mag >= 1) return 'Minor positive effect';
+      return 'Very low significance';
+    }
+
+    // For bad/risk traits
+    if (r === 'bad') {
+      if (mag >= 4) return 'High clinical significance - consult a healthcare professional';
+      if (mag >= 3) return 'Moderate clinical significance';
+      if (mag >= 2) return 'Notable finding worth reviewing';
+      if (mag >= 1) return 'Minor significance';
+      return 'Very low clinical significance';
+    }
+
+    // Neutral/unknown
+    if (mag >= 4) return 'High significance';
+    if (mag >= 3) return 'Moderate significance';
+    if (mag >= 2) return 'Notable finding';
     if (mag >= 1) return 'Minor significance';
     return 'Very low or no clinical significance';
   };
@@ -337,13 +369,15 @@ export function SNPDetailModal({
                   <MagnitudeBadge magnitude={magnitude} repute={repute} size="lg" />
                 </div>
                 <p className="text-sm text-[var(--text-secondary)]">
-                  {getMagnitudeDescription(magnitude)}
+                  {getMagnitudeDescription(magnitude, repute)}
                 </p>
                 <div className="mt-3 h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
                   <div
                     className={clsx(
                       'h-full rounded-full',
-                      'bg-gradient-to-r from-emerald-500 via-yellow-500 to-red-500'
+                      repute?.toLowerCase() === 'good' && 'bg-gradient-to-r from-teal-300 to-teal-600',
+                      repute?.toLowerCase() === 'bad' && 'bg-gradient-to-r from-amber-400 to-red-600',
+                      (!repute || repute?.toLowerCase() === 'neutral') && 'bg-gradient-to-r from-gray-300 to-gray-500'
                     )}
                     style={{ width: `${Math.min(magnitude / 5 * 100, 100)}%` }}
                   />

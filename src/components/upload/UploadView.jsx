@@ -52,7 +52,7 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 mb-8 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-600 dark:text-emerald-400 text-sm font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 mb-8 bg-stone-200 dark:bg-stone-700/50 border border-stone-300 dark:border-stone-600 rounded-full text-stone-700 dark:text-stone-300 text-sm font-medium"
             >
               <Shield className="w-4 h-4" />
               <span>Your DNA data never leaves your browser</span>
@@ -61,7 +61,7 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
             {/* Title */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
               <span className="text-[var(--text-primary)]">Discover Your </span>
-              <span className="bg-gradient-to-r from-cyan-500 dark:from-cyan-400 via-indigo-500 dark:via-indigo-400 to-purple-500 dark:to-purple-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-stone-600 to-stone-500 bg-clip-text text-transparent">
                 Genetic Story
               </span>
             </h1>
@@ -96,8 +96,8 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
                 className="p-6 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-center transition-colors duration-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-white/20"
                 whileHover={{ y: -4 }}
               >
-                <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 flex items-center justify-center">
-                  <feature.icon className="w-6 h-6 text-cyan-500 dark:text-cyan-400" />
+                <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-stone-200 dark:bg-stone-700/50 flex items-center justify-center">
+                  <feature.icon className="w-6 h-6 text-stone-600 dark:text-stone-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
                   {feature.title}

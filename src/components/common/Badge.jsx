@@ -21,41 +21,40 @@ export function Badge({
       border border-white/10
     `,
     primary: `
-      bg-gradient-to-r from-cyan-500/20 to-indigo-500/20
-      text-cyan-300
-      border border-cyan-500/30
+      bg-slate-500/20 text-slate-700 dark:text-slate-300
+      border border-slate-500/30
     `,
 
-    // Risk levels (ClinVar-style)
+    // Risk levels (Clinical-style, muted)
     critical: `
-      bg-red-500/20 text-red-300
-      border border-red-500/30
+      bg-red-700/20 text-red-700 dark:text-red-400
+      border border-red-700/30
     `,
     high: `
-      bg-orange-500/20 text-orange-300
-      border border-orange-500/30
+      bg-amber-600/20 text-amber-700 dark:text-amber-400
+      border border-amber-600/30
     `,
     moderate: `
-      bg-yellow-500/20 text-yellow-300
-      border border-yellow-500/30
+      bg-yellow-600/20 text-yellow-700 dark:text-yellow-400
+      border border-yellow-600/30
     `,
     low: `
-      bg-green-500/20 text-green-300
-      border border-green-500/30
+      bg-teal-500/20 text-teal-700 dark:text-teal-400
+      border border-teal-500/30
     `,
     benign: `
-      bg-emerald-500/20 text-emerald-300
-      border border-emerald-500/30
+      bg-teal-500/20 text-teal-600 dark:text-teal-400
+      border border-teal-500/30
     `,
 
-    // Repute variants
+    // Repute variants (clinical teal for good)
     good: `
-      bg-emerald-500/20 text-emerald-300
-      border border-emerald-500/30
+      bg-teal-500/20 text-teal-700 dark:text-teal-400
+      border border-teal-500/30
     `,
     bad: `
-      bg-red-500/20 text-red-300
-      border border-red-500/30
+      bg-red-700/20 text-red-700 dark:text-red-400
+      border border-red-700/30
     `,
     neutral: `
       bg-gray-500/20 text-gray-300
@@ -126,13 +125,18 @@ export function Badge({
 // Magnitude badge with automatic color coding
 export function MagnitudeBadge({ magnitude, repute, size = 'md', className }) {
   const getVariant = (mag, rep) => {
+    // Magnitude 0 or very low = always neutral, regardless of repute
+    if (mag === 0 || mag < 0.5) {
+      return 'neutral';
+    }
+
     const r = rep?.toLowerCase();
 
-    // For good/beneficial repute, use green shades
+    // For good/beneficial repute, use teal shades
     if (r === 'good') {
-      if (mag >= 3) return 'benign';  // bright green for high-impact good
-      if (mag >= 2) return 'low';     // green
-      return 'benign';                 // light green
+      if (mag >= 3) return 'benign';  // bright teal for high-impact good
+      if (mag >= 2) return 'low';     // teal
+      return 'benign';                 // light teal
     }
 
     // For bad/risk repute, use red/orange shades
@@ -148,7 +152,7 @@ export function MagnitudeBadge({ magnitude, repute, size = 'md', className }) {
     if (mag >= 3) return 'high';
     if (mag >= 2) return 'moderate';
     if (mag >= 1) return 'low';
-    return 'benign';
+    return 'neutral';
   };
 
   return (

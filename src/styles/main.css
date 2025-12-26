@@ -1,53 +1,53 @@
 :root {
-  /* Colors - Light Theme (Sterile Lab / DNA Structure) */
-  --bg-primary: #f0f9ff;
-  /* Alice Blue - Sterile */
-  --bg-secondary: #ffffff;
-  --text-primary: #0f172a;
-  /* Slate 900 */
-  --text-secondary: #475569;
-  /* Slate 600 */
+  /* Colors - Light Theme (Warm Cream / Editorial) */
+  --bg-primary: #FAF9F6;
+  /* Warm Cream - Editorial Background */
+  --bg-secondary: #FFFFFF;
+  --text-primary: #2D2722;
+  /* Warm Charcoal */
+  --text-secondary: #5C534A;
+  /* Warm Gray */
 
-  /* DNA Accents: Cyan (Cytosine) -> Indigo (Guanine) gradient */
-  --accent-primary: #06b6d4;
-  /* Cyan 500 */
-  --accent-secondary: #6366f1;
-  /* Indigo 500 */
-  --accent-gradient: linear-gradient(135deg, #06b6d4 0%, #6366f1 100%);
+  /* Professional Accents: Warm Slate + Stone */
+  --accent-primary: #4A5568;
+  /* Professional Slate */
+  --accent-secondary: #78716C;
+  /* Warm Stone */
+  --accent-gradient: linear-gradient(135deg, #4A5568 0%, #78716C 100%);
 
-  --surface-glass: rgba(255, 255, 255, 0.8);
-  --border-color: rgba(6, 182, 212, 0.15);
-  /* Subtle Cyan Tint */
-  --shadow-sm: 0 1px 2px 0 rgb(6 182 212 / 0.05);
-  --shadow-lg: 0 10px 15px -3px rgb(6 182 212 / 0.1), 0 4px 6px -4px rgb(99 102 241 / 0.1);
-  --success-color: #10b981;
-  --warning-color: #f59e0b;
-  --danger-color: #ef4444;
-  --card-radius: 20px;
-  /* Softer, organic curves */
+  --surface-glass: rgba(250, 249, 246, 0.95);
+  --border-color: rgba(45, 39, 34, 0.12);
+  /* Warm border */
+  --shadow-sm: 0 1px 2px 0 rgb(45 39 34 / 0.06);
+  --shadow-lg: 0 10px 15px -3px rgb(45 39 34 / 0.08), 0 4px 6px -4px rgb(45 39 34 / 0.06);
+  --success-color: #2D8B7A;
+  --warning-color: #C17817;
+  --danger-color: #B91C1C;
+  --card-radius: 12px;
+  /* Clinical, refined curves */
 }
 
 [data-theme="dark"] {
-  /* Colors - Dark Theme (Deep Space / Microscopy) */
-  --bg-primary: #020617;
-  /* Slate 950 */
-  --bg-secondary: #0f172a;
-  /* Slate 900 */
-  --text-primary: #f8fafc;
-  /* Slate 50 */
-  --text-secondary: #94a3b8;
-  /* Slate 400 */
+  /* Colors - Dark Theme (Deep Charcoal / Professional) */
+  --bg-primary: #1A1A1E;
+  /* Deep Charcoal */
+  --bg-secondary: #242428;
+  /* Dark Surface */
+  --text-primary: #F5F3EF;
+  /* Warm Off-White */
+  --text-secondary: #A09B94;
+  /* Muted Warm Gray */
 
-  --accent-primary: #22d3ee;
-  /* Cyan 400 */
-  --accent-secondary: #818cf8;
-  /* Indigo 400 */
+  --accent-primary: #8B8279;
+  /* Warm Gray */
+  --accent-secondary: #A09B94;
+  /* Light Warm */
 
-  --surface-glass: rgba(15, 23, 42, 0.7);
-  --border-color: rgba(34, 211, 238, 0.2);
-  /* Glowing Cyan Border */
+  --surface-glass: rgba(36, 36, 40, 0.9);
+  --border-color: rgba(139, 130, 121, 0.2);
+  /* Warm border */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-lg: 0 10px 25px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(34 211 238 / 0.1);
+  --shadow-lg: 0 10px 25px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.2);
 }
 
 * {
@@ -63,6 +63,13 @@ body {
   line-height: 1.6;
   transition: background-color 0.3s ease, color 0.3s ease;
   min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Libre Baskerville", serif;
+  letter-spacing: -0.01em;
 }
 
 a {

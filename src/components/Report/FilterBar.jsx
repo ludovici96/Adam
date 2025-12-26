@@ -46,7 +46,7 @@ const POPULAR_SEARCHES = [
   { term: 'heart', description: 'Cardiovascular' }
 ];
 
-export function FilterBar({ resultCount = 0 }) {
+export function FilterBar({ resultCount = 0, chartFilteredMatches = null, onClearChartFilter }) {
   const {
     filters,
     sort,
@@ -342,17 +342,35 @@ export function FilterBar({ resultCount = 0 }) {
 
       {/* Results count and reset */}
       <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-white/5">
-        <p className="text-sm text-[var(--text-secondary)]">
-          Showing <span className="font-medium text-[var(--text-primary)]">{resultCount.toLocaleString()}</span> results
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Showing <span className="font-medium text-[var(--text-primary)]">{resultCount.toLocaleString()}</span> results
+          </p>
+          {chartFilteredMatches && (
+            <button
+              onClick={onClearChartFilter}
+              className={clsx(
+                'flex items-center gap-1 px-2 py-1 rounded-lg',
+                'text-xs font-medium',
+                'bg-stone-200 dark:bg-stone-700',
+                'text-stone-700 dark:text-stone-300',
+                'hover:bg-stone-300 dark:hover:bg-stone-600',
+                'transition-colors duration-200'
+              )}
+            >
+              <X className="w-3 h-3" />
+              <span>Clear chart filter</span>
+            </button>
+          )}
+        </div>
 
         {hasActiveFilters && (
           <button
             onClick={resetFilters}
             className={clsx(
               'flex items-center gap-1',
-              'text-sm text-cyan-400',
-              'hover:text-cyan-300',
+              'text-sm text-stone-500',
+              'hover:text-stone-700 dark:hover:text-stone-300',
               'transition-colors duration-200'
             )}
           >

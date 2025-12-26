@@ -6,37 +6,37 @@ import { PieChart, Heart, Sparkles, Globe, Pill, Users, HelpCircle } from 'lucid
 const CATEGORY_CONFIG = {
   health: {
     label: 'Health',
-    color: '#FF3B30',
+    color: '#B91C1C',
     icon: Heart,
     description: 'Disease risk & medical conditions'
   },
   traits: {
     label: 'Traits',
-    color: '#AF52DE',
+    color: '#1E3A5F',
     icon: Sparkles,
     description: 'Physical & behavioral characteristics'
   },
   ancestry: {
     label: 'Ancestry',
-    color: '#FF9500',
+    color: '#C17817',
     icon: Globe,
     description: 'Population genetics & origins'
   },
   pharmacogenomics: {
     label: 'Drug Response',
-    color: '#007AFF',
+    color: '#4A90A4',
     icon: Pill,
     description: 'Medication metabolism'
   },
   carrier: {
     label: 'Carrier',
-    color: '#FF2D55',
+    color: '#6B46C1',
     icon: Users,
     description: 'Recessive disease carrier status'
   },
   other: {
     label: 'Other',
-    color: '#8E8E93',
+    color: '#718096',
     icon: HelpCircle,
     description: 'Miscellaneous findings'
   }
@@ -236,7 +236,8 @@ function DonutSegment({ item, index, isHovered, isSelected, onHover, onLeave, on
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const strokeLength = (item.percent / 100) * circumference;
-  const strokeOffset = circumference - (item.startAngle / 360) * circumference;
+  // Offset moves the dash start point - subtract startAngle portion
+  const strokeOffset = -(item.startAngle / 360) * circumference;
 
   return (
     <motion.circle
@@ -248,7 +249,7 @@ function DonutSegment({ item, index, isHovered, isSelected, onHover, onLeave, on
       strokeWidth={isHovered || isSelected ? 14 : 12}
       strokeDasharray={`${strokeLength} ${circumference}`}
       strokeDashoffset={strokeOffset}
-      strokeLinecap="round"
+      strokeLinecap="butt"
       className="cursor-pointer transition-all duration-200"
       style={{ opacity: isHovered || isSelected ? 1 : 0.8 }}
       initial={{ strokeDasharray: `0 ${circumference}` }}
@@ -293,9 +294,11 @@ function CategoryDetail({ category }) {
             </span>
             <span className={clsx(
               'text-xs px-1.5 py-0.5 rounded font-medium',
-              (match.magnitude || 0) >= 3 ? 'bg-red-500/20 text-red-400' :
-              (match.magnitude || 0) >= 2 ? 'bg-amber-500/20 text-amber-400' :
-              'bg-gray-500/20 text-gray-400'
+              match.repute?.toLowerCase() === 'good'
+                ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
+                : match.repute?.toLowerCase() === 'bad'
+                  ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                  : 'bg-gray-500/20 text-gray-600 dark:text-gray-400'
             )}>
               {(match.magnitude || 0).toFixed(1)}
             </span>

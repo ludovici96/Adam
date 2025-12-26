@@ -5,11 +5,11 @@ import { Upload, FileText, Check, AlertCircle } from 'lucide-react';
 const ACCEPTED_EXTENSIONS = ['.vcf', '.csv', '.txt', '.zip'];
 
 const SUPPORTED_PROVIDERS = [
-  { name: '23andMe', color: 'text-cyan-500 dark:text-cyan-400' },
-  { name: 'AncestryDNA', color: 'text-orange-500 dark:text-orange-400' },
-  { name: 'FTDNA', color: 'text-blue-500 dark:text-blue-400' },
-  { name: 'MyHeritage', color: 'text-purple-500 dark:text-purple-400' },
-  { name: 'VCF', color: 'text-emerald-500 dark:text-emerald-400' }
+  { name: '23andMe', color: 'text-[#92C746]' },       // Sushi Green
+  { name: 'AncestryDNA', color: 'text-[#88A431]' },  // Leaf Green
+  { name: 'FTDNA', color: 'text-[#273757] dark:text-[#6B8BB8]' },        // Dark Blue/Navy (lighter in dark mode)
+  { name: 'MyHeritage', color: 'text-[#FC702D]' },   // Crusta Orange
+  { name: 'VCF', color: 'text-stone-600 dark:text-stone-400' }  // Generic format
 ];
 
 export function DropZone({ onFileSelect, disabled = false }) {
@@ -110,13 +110,11 @@ export function DropZone({ onFileSelect, disabled = false }) {
   return (
     <div className="w-full max-w-2xl mx-auto">
       <motion.div
-        className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-12 transition-all duration-300 cursor-pointer group ${
-          disabled ? 'opacity-50 cursor-not-allowed' : ''
-        } ${
-          isDragOver
-            ? 'border-cyan-500 dark:border-cyan-400 bg-cyan-500/10 scale-[1.02]'
-            : 'border-gray-300 dark:border-white/20 bg-gray-50 dark:bg-white/5 hover:border-gray-400 dark:hover:border-white/30 hover:bg-gray-100 dark:hover:bg-white/10'
-        }`}
+        className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-12 transition-all duration-300 cursor-pointer group ${disabled ? 'opacity-50 cursor-not-allowed' : ''
+          } ${isDragOver
+            ? 'border-stone-500 dark:border-stone-400 bg-stone-500/10 scale-[1.02]'
+            : 'border-gray-300 dark:border-white/20 bg-gray-50 dark:bg-white/5 hover:border-stone-400 dark:hover:border-white/30 hover:bg-gray-100 dark:hover:bg-white/10'
+          }`}
         onDragOver={handleDragOver}
         onDragEnter={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -147,14 +145,13 @@ export function DropZone({ onFileSelect, disabled = false }) {
         <div className="flex flex-col items-center text-center">
           {/* Icon */}
           <motion.div
-            className={`w-16 h-16 rounded-2xl mb-6 flex items-center justify-center transition-colors duration-300 ${
-              isDragOver
-                ? 'bg-cyan-500/20'
-                : 'bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 group-hover:from-cyan-500/30 group-hover:to-indigo-500/30'
-            }`}
+            className={`w-16 h-16 rounded-2xl mb-6 flex items-center justify-center transition-colors duration-300 ${isDragOver
+              ? 'bg-stone-500/20'
+              : 'bg-stone-200 dark:bg-stone-700/30 group-hover:bg-stone-300 dark:group-hover:bg-stone-600/40'
+              }`}
             animate={isDragOver ? { scale: 1.1 } : { scale: 1 }}
           >
-            <Upload className={`w-8 h-8 transition-colors duration-300 ${isDragOver ? 'text-cyan-400' : 'text-cyan-500'}`} />
+            <Upload className={`w-8 h-8 transition-colors duration-300 ${isDragOver ? 'text-stone-600 dark:text-stone-300' : 'text-stone-700 dark:text-stone-400'}`} />
           </motion.div>
 
           {/* Text */}
@@ -186,10 +183,10 @@ export function DropZone({ onFileSelect, disabled = false }) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3"
+            className="mt-4 p-4 rounded-xl bg-stone-100 dark:bg-stone-800/50 border border-stone-300 dark:border-stone-600 flex items-center gap-3"
           >
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+            <div className="w-10 h-10 rounded-lg bg-stone-200 dark:bg-stone-700 flex items-center justify-center">
+              <FileText className="w-5 h-5 text-stone-600 dark:text-stone-400" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-[var(--text-primary)] truncate">
@@ -199,7 +196,7 @@ export function DropZone({ onFileSelect, disabled = false }) {
                 {formatFileSize(selectedFile.size)} - {selectedFile.type.toUpperCase()}
               </p>
             </div>
-            <Check className="w-5 h-5 text-emerald-400" />
+            <Check className="w-5 h-5 text-stone-600 dark:text-stone-400" />
           </motion.div>
         )}
       </AnimatePresence>
