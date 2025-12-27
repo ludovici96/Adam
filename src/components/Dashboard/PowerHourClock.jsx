@@ -144,7 +144,8 @@ export function PowerHourClock({
 
                     {segments.map((seg, i) => {
                         const isLowIntensity = seg.intensity === 'low';
-                        const baseStroke = isLowIntensity ? strokeWidth / 2 : strokeWidth;
+                        // Thin stroke for transitions (4px), Thick for peaks (12px)
+                        const baseStroke = isLowIntensity ? 4 : strokeWidth;
                         const activeStroke = hoveredSegment === seg.type ? baseStroke + 4 : baseStroke;
 
                         return (
@@ -155,7 +156,7 @@ export function PowerHourClock({
                                 stroke={seg.color}
                                 strokeWidth={activeStroke}
                                 strokeLinecap="round"
-                                strokeOpacity={isLowIntensity ? 0.4 : 0.9}
+                                strokeOpacity={isLowIntensity ? 0.4 : 1}
                                 className={clsx(
                                     "transition-all duration-300 cursor-pointer hover:stroke-opacity-100",
                                     // Add subtle pulse for high intensity segments
@@ -214,6 +215,9 @@ export function PowerHourClock({
                     </div>
                     <div className="flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Recharge
+                    </div>
+                    <div className="flex items-center gap-1.5 opacity-50">
+                        <div className="w-1.5 h-1.5 rounded-full border border-stone-400"></div> Transitions
                     </div>
                 </div>
             </div>
