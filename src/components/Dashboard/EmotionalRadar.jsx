@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Sparkles, ChevronDown, ChevronUp, Heart, Zap, Moon, Sun, X, Beaker, Lightbulb, Activity, UserPlus, Users, Calendar, Fingerprint, Scale } from 'lucide-react';
 import { useAnalysis } from '../../context/AnalysisContext';
@@ -34,6 +35,7 @@ export function EmotionalRadar() {
   const { emotionalProfile, partnerEmotionalProfile, setPartnerEmotionalProfile, matches } = useAnalysis();
   const [expandedSystem, setExpandedSystem] = useState(null);
   const [selectedInsight, setSelectedInsight] = useState(null);
+  const [activeSimulation, setActiveSimulation] = useState(null);
   const [isPartnerLoading, setIsPartnerLoading] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -45,7 +47,7 @@ export function EmotionalRadar() {
   const { systems, archetype, radarData, overallConfidence, coverage } = emotionalProfile;
   const confidenceInfo = CONFIDENCE_LABELS[overallConfidence] || CONFIDENCE_LABELS.insufficient;
 
-  // New: Circadian Analysis
+  /* New: Circadian Analysis */
   const circadian = useMemo(() => {
     if (!matches) return null;
     const analyzer = new CircadianAnalyzer(matches);
@@ -154,6 +156,11 @@ export function EmotionalRadar() {
             <div className={clsx('text-xs font-medium px-2 py-1 rounded-full bg-stone-100 dark:bg-white/10 flex items-center', confidenceInfo.color)}>
               {confidenceInfo.label}
             </div>
+            {!partnerEmotionalProfile && (
+              <a href="/simulation" className="flex items-center gap-2 p-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 hover:bg-emerald-100 transition-colors" title="Open Simulation Lab">
+                <Beaker className="w-4 h-4" />
+              </a>
+            )}
           </div>
         </div>
 
@@ -190,7 +197,7 @@ export function EmotionalRadar() {
               <div className="scale-75">
                 <RadarChart
                   data={radarData}
-                  secondaryData={partnerEmotionalProfile?.radarData}
+                  secondaryData={partnerEmotionalProfile ? partnerEmotionalProfile.radarData : null}
                   size={260}
                   animated={true}
                   showLabels={true}
@@ -206,7 +213,7 @@ export function EmotionalRadar() {
           ) : (
             <RadarChart
               data={radarData}
-              secondaryData={partnerEmotionalProfile?.radarData}
+              secondaryData={partnerEmotionalProfile ? partnerEmotionalProfile.radarData : null}
               size={260}
               animated={true}
               showLabels={true}
@@ -220,7 +227,7 @@ export function EmotionalRadar() {
           )}
         </div>
 
-        {/* CHEMISTRY OVERLAY: SCENARIO ENGINE */}
+        {/* CHEMISTRY OVERLAY: SCENARIO ENGINE (Partner Mode) */}
         {partnerEmotionalProfile && chemistry && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
 
@@ -277,6 +284,10 @@ export function EmotionalRadar() {
             </div>
           </div>
         )}
+
+
+
+
 
         {/* BOTTOM SECTION: CONDITIONAL RENDER */}
         {/* If Partner: "Synthesis Engine" View */}

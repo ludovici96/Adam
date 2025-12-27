@@ -134,13 +134,14 @@ export function RadarChart({
       {secondaryData && secondaryPathD && (
         <motion.path
           d={secondaryPathD}
-          fill="none"
-          stroke={colors.secondaryStroke || '#2D8B7A'} // Teal (Guanine/Innovation)
+          fill={colors.secondaryFill || 'none'}
+          fillOpacity={colors.secondaryFill ? 0.2 : 0}
+          stroke={colors.secondaryStroke || '#2D8B7A'} // Default Teal
           strokeWidth={2}
-          strokeDasharray="4 2" // Dashed line for ghost effect
+          strokeDasharray={colors.secondaryFill ? "0" : "4 2"} // Solid if filled (simulation), dashed if not (partner)
           strokeLinejoin="round"
           initial={animated ? { pathLength: 0, opacity: 0 } : false}
-          animate={{ pathLength: 1, opacity: 0.6 }}
+          animate={{ pathLength: 1, opacity: 0.8 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
         />
       )}
@@ -168,7 +169,7 @@ export function RadarChart({
           cx={point.x}
           cy={point.y}
           r={3}
-          fill={colors.secondaryPoints || '#5EEAD4'} // Teal-300
+          fill={colors.secondaryStroke || '#5EEAD4'}
           stroke="white"
           strokeWidth={1.5}
           initial={animated ? { scale: 0, opacity: 0 } : false}

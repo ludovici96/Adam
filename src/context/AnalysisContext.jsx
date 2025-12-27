@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useEffect } from 'react';
+import localforage from 'localforage';
 
 const initialState = {
   variants: [],
@@ -123,7 +124,15 @@ function analysisReducer(state, action) {
       return {
         ...initialState,
         databaseLoaded: state.databaseLoaded,
-        databaseSize: state.databaseSize
+        databaseSize: state.databaseSize,
+        isRestoring: false // Ensure isRestoring is false after a reset
+      };
+
+    case ACTIONS.RESTORE_COMPLETE: // Added for hydration
+      return {
+        ...state,
+        ...action.payload,
+        isRestoring: false
       };
 
     default:
@@ -135,6 +144,56 @@ const AnalysisContext = createContext(null);
 
 export function AnalysisProvider({ children }) {
   const [state, dispatch] = useReducer(analysisReducer, initialState);
+
+  // Hydrate Analysis State
+  useEffect(() => {
+    const hydrate = async () => {
+      try {
+        const savedData = await localforage.getItem('analysisData');
+        if (savedData) {
+          dispatch({ type: ACTIONS.RESTORE_COMPLETE, payload: savedData });
+        } else {
+          dispatch({ type: ACTIONS.RESTORE_COMPLETE, payload: {} }); // No saved data, just mark restore complete
+        }
+      } catch (err) {
+        console.error('Failed to hydrate analysis data:', err);
+        dispatch({ type: ACTIONS.RESTORE_COMPLETE, payload: {} }); // On error, mark restore complete
+      }
+    };
+    hydrate();
+  }, []); // Run once on mount
+
+  // Persist Analysis State
+  useEffect(() => {
+    // Only persist if not currently restoring and if matches or emotionalProfile are populated
+    if (!state.isRestoring && (state.matches.length > 0 || state.emotionalProfile !== null)) {
+      const dataToSave = {
+        matches: state.matches,
+        emotionalProfile: state.emotionalProfile,
+        partnerEmotionalProfile: state.partnerEmotionalProfile,
+        // Add other heavy data if needed, e.g., categories, riskScores, pharmaResults
+        categories: state.categories,
+        riskScores: state.riskScores,
+        pharmaResults: state.pharmaResults,
+        haplogroups: state.haplogroups,
+        stats: state.stats,
+        variants: state.variants
+      };
+      localforage.setItem('analysisData', dataToSave).catch(err => console.error('Failed to save analysis data:', err));
+    }
+  }, [
+    state.matches,
+    state.emotionalProfile,
+    state.partnerEmotionalProfile,
+    state.categories,
+    state.riskScores,
+    state.pharmaResults,
+    state.haplogroups,
+    state.stats,
+    state.variants,
+    state.isRestoring
+  ]);
+
 
   const setVariants = useCallback((variants) => {
     dispatch({ type: ACTIONS.SET_VARIANTS, payload: variants });
