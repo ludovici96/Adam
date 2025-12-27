@@ -1,34 +1,37 @@
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { clsx } from 'clsx';
 import { useAnalysis } from '../../context/AnalysisContext';
 import { PharmacogenomicAnalyzer } from '../../analysis/PharmacogenomicAnalyzer';
 import { SimulationPanel } from '../Dashboard/SimulationPanel';
 import { RadarChart } from '../visualizations/RadarChart';
 import { PowerHourClock } from '../Dashboard/PowerHourClock';
-import { CircadianAnalyzer } from '../../analysis/CircadianAnalyzer'; // Optional if we want the clock here too
-import { Sparkles, Beaker, ArrowLeft } from 'lucide-react';
+import { CircadianAnalyzer } from '../../analysis/CircadianAnalyzer';
+import { Beaker, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../common/Button';
 
 export function SimulationLab() {
     const { emotionalProfile, matches, archetype } = useAnalysis();
-    const [activeSimulation, setActiveSimulation] = useState(null);
 
-    // 1. Calculate Pharma Results
+    // Changed: Track object of active substances { caffeine: 'High', alcohol: 2 }
+    const [activeSubstances, setActiveSubstances] = useState({});
+
+    // 1. Calculate Pharma Results (Static Genetic Profile)
     const pharmaResults = useMemo(() => {
         if (!matches) return null;
         const analyzer = new PharmacogenomicAnalyzer();
         return analyzer.analyze(matches);
     }, [matches]);
 
-    // 2. Calculate Simulation Data (Ghost)
+    // 2. Calculate Simulation Data (Ghost State)
     const simulationData = useMemo(() => {
-        if (!activeSimulation || !pharmaResults || !emotionalProfile) return null;
+        if (Object.keys(activeSubstances).length === 0 || !pharmaResults || !emotionalProfile) return null;
         const analyzer = new PharmacogenomicAnalyzer();
-        return analyzer.simulate(emotionalProfile.radarData, activeSimulation, pharmaResults);
-    }, [activeSimulation, pharmaResults, emotionalProfile]);
+        return analyzer.calculateGhostState(emotionalProfile.radarData, activeSubstances, pharmaResults);
+    }, [activeSubstances, pharmaResults, emotionalProfile]);
 
-    // 3. Circadian (Optional, purely aesthetic for the Lab context?)
+    // 3. Circadian
     const circadian = useMemo(() => {
         if (!matches || !archetype) return null;
         const analyzer = new CircadianAnalyzer(matches);
@@ -39,6 +42,19 @@ export function SimulationLab() {
 
 
     const navigate = useNavigate();
+
+    const hasActiveSimulation = Object.keys(activeSubstances).length > 0;
+
+    // Check for Red Flags in insights
+    const isRedFlag = useMemo(() => {
+        if (!simulationData?.insights) return false;
+        return simulationData.insights.some(i =>
+            i.includes('RED FLAG') ||
+            i.includes('WARNING') ||
+            i.includes('CARDIAC') ||
+            i.includes('NEURO-TOXICITY')
+        );
+    }, [simulationData]);
 
     if (!emotionalProfile) {
         return (
@@ -64,9 +80,14 @@ export function SimulationLab() {
                 </div>
 
                 <div className="text-center space-y-2">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-bold tracking-widest uppercase">
+                    <div className={clsx(
+                        "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase transition-colors duration-500",
+                        isRedFlag
+                            ? "bg-rose-500/10 text-rose-500 animate-pulse border border-rose-500/20"
+                            : "bg-emerald-500/10 text-emerald-500"
+                    )}>
                         <Beaker className="w-4 h-4" />
-                        Simulation Lab
+                        {isRedFlag ? "Bio-Hazard Detected" : "Simulation Lab"}
                     </div>
                     <h1 className="text-3xl font-serif text-stone-900 dark:text-white">
                         The "What-If" Engine
@@ -80,11 +101,25 @@ export function SimulationLab() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                 {/* Left: Visualization */}
-                <div className="p-8 rounded-3xl bg-stone-900 shadow-2xl relative overflow-hidden flex justify-center items-center min-h-[400px]">
+                <div className={clsx(
+                    "p-8 rounded-3xl shadow-2xl relative overflow-hidden flex justify-center items-center min-h-[400px] transition-all duration-1000",
+                    isRedFlag
+                        ? "bg-stone-900 shadow-rose-900/20 ring-1 ring-rose-500/30"
+                        : "bg-stone-900"
+                )}>
                     {/* Cyber Grid Background */}
-                    <div className="absolute inset-0 opacity-20"
+                    <div className={clsx(
+                        "absolute inset-0 transition-opacity duration-1000",
+                        isRedFlag ? "opacity-10 bg-rose-900/10" : "opacity-20"
+                    )}
                         style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
                     </div>
+
+                    {/* Red Alarm Overlay */}
+                    <div className={clsx(
+                        "absolute inset-0 pointer-events-none transition-opacity duration-500 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))]",
+                        isRedFlag ? "from-rose-500/10 via-transparent to-transparent opacity-100" : "opacity-0"
+                    )} />
 
                     {/* Radar */}
                     <div className="relative z-10 scale-110">
@@ -123,51 +158,79 @@ export function SimulationLab() {
                 {/* Right: Controls & Insights */}
                 <div className="space-y-6">
                     <SimulationPanel
-                        activeSimulation={activeSimulation}
-                        onToggle={(val) => setActiveSimulation(activeSimulation === val ? null : val)}
+                        activeSubstances={activeSubstances}
+                        onUpdate={setActiveSubstances}
                         pharmaResults={pharmaResults}
                     />
 
-                    {/* Detailed Insight Card */}
-                    {activeSimulation && simulationData && (
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-500/20"
-                        >
-                            <h3 className="text-lg font-serif font-medium text-emerald-900 dark:text-emerald-100 mb-2">
-                                {simulationData.profile} Metabolizer Impact
-                            </h3>
-                            <p className="text-sm text-emerald-800 dark:text-emerald-200/80 leading-relaxed mb-4">
-                                {simulationData.insight}
-                            </p>
+                    {/* Simulation Insight Cards */}
+                    <div className="space-y-4">
+                        <AnimatePresence>
+                            {hasActiveSimulation && simulationData && simulationData.insights.map((insight, idx) => (
+                                <motion.div
+                                    key={idx}
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-500/20"
+                                >
+                                    <h4 className="flex items-center gap-2 text-sm font-bold text-emerald-800 dark:text-emerald-100 mb-1">
+                                        <Beaker className="w-3 h-3" />
+                                        Pharmacogenomic Hit
+                                    </h4>
+                                    <p className="text-xs text-emerald-800/80 dark:text-emerald-200/80 leading-relaxed">
+                                        {insight.split(/(\*\*.*?\*\*)/).map((part, i) =>
+                                            part.startsWith('**') && part.endsWith('**') ?
+                                                <strong key={i} className="font-bold text-emerald-900 dark:text-emerald-50">
+                                                    {part.slice(2, -2)}
+                                                </strong> :
+                                                <span key={i}>{part}</span>
+                                        )}
+                                    </p>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
 
-                            <div className="space-y-2">
-                                <div className="text-[10px] uppercase tracking-widest font-bold text-emerald-600/50">
-                                    Neurochemical Shift
+                        {/* Ghost Delta Summary */}
+                        {hasActiveSimulation && simulationData && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/50"
+                            >
+                                <div className="text-[10px] uppercase tracking-widest font-bold text-stone-400 mb-3">
+                                    Net Neurochemical Shift
                                 </div>
-                                {simulationData.ghostData.map((axis, i) => {
-                                    const delta = axis.value - axis.originalValue;
-                                    if (Math.abs(delta) < 0.05) return null;
+                                <div className="space-y-1">
+                                    {simulationData.ghostData.map((axis, i) => {
+                                        const delta = axis.value - axis.originalValue;
+                                        if (Math.abs(delta) < 0.05) return null;
 
-                                    return (
-                                        <div key={i} className="flex justify-between items-center text-xs">
-                                            <span className="font-medium text-emerald-900 dark:text-emerald-100">{axis.axis}</span>
-                                            <span className={delta > 0 ? "text-emerald-600" : "text-rose-500"}>
-                                                {delta > 0 ? '+' : ''}{Math.round(delta * 100)}%
-                                            </span>
-                                        </div>
-                                    );
-                                })}
+                                        return (
+                                            <div key={i} className="flex justify-between items-center text-xs">
+                                                <span className="font-medium text-stone-700 dark:text-stone-300">{axis.axis}</span>
+                                                <span className={`font-mono ${delta > 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                                                    {delta > 0 ? '+' : ''}{Math.round(delta * 100)}%
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* Empty State */}
+                        {!hasActiveSimulation && (
+                            <div className="p-6 rounded-2xl border border-dashed border-stone-200 dark:border-stone-800 text-center text-stone-400">
+                                <p className="text-sm">
+                                    <strong>Initialize Simulation Kernel:</strong> Select a compound to run the new <em>Kinetic Pharmacogenomic Engine</em>.
+                                    <br /><br />
+                                    This engine calculates your specific <strong>Clearance Rates (Half-Life)</strong> and <strong>Receptor Sensitivity</strong> to model how your brain chemistry shifts over time.
+                                </p>
                             </div>
-                        </motion.div>
-                    )}
-
-                    {!activeSimulation && (
-                        <div className="p-6 rounded-2xl border border-dashed border-stone-200 dark:border-stone-800 text-center text-stone-400">
-                            <p className="text-sm">Select a chemical agent above to simulate its effect on your unique biology.</p>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

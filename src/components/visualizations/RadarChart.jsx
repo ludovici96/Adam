@@ -125,9 +125,9 @@ export function RadarChart({
         stroke={mergedColors.stroke}
         strokeWidth={2.5}
         strokeLinejoin="round"
-        initial={animated ? { pathLength: 0, opacity: 0 } : false}
-        animate={{ pathLength: 1, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+        initial={false}
+        animate={{ d: pathD, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 45, damping: 12 }}
       />
 
       {/* Secondary Data Polygon (Ghost Chart) */}
@@ -140,9 +140,9 @@ export function RadarChart({
           strokeWidth={2}
           strokeDasharray={colors.secondaryFill ? "0" : "4 2"} // Solid if filled (simulation), dashed if not (partner)
           strokeLinejoin="round"
-          initial={animated ? { pathLength: 0, opacity: 0 } : false}
-          animate={{ pathLength: 1, opacity: 0.8 }}
-          transition={{ duration: 0.8, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
+          initial={false}
+          animate={{ d: secondaryPathD, opacity: 0.8 }}
+          transition={{ type: "spring", stiffness: 40, damping: 10, mass: 1 }}
         />
       )}
 
