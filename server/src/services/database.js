@@ -45,6 +45,22 @@ class DatabaseService {
         return Math.max(0, ...Object.values(genotypes).map(g => g.magnitude || 0));
     }
 
+    // Check if SNPedia summary indicates this is a common/normal genotype
+    // This helps prevent ClinVar strand errors from overriding known-common genotypes
+    isCommonGenotype(summary) {
+        if (!summary) return false;
+        const lower = summary.toLowerCase();
+        return (
+            lower.includes('99%') ||
+            lower.includes('98%') ||
+            lower.includes('95%') ||
+            lower.includes('most common') ||
+            lower.includes('common/normal') ||
+            lower.includes('common genotype') ||
+            (lower.includes('common') && lower.includes('normal'))
+        );
+    }
+
     async load() {
         const startTime = Date.now();
         console.log('Loading databases...');
@@ -147,12 +163,27 @@ class DatabaseService {
                                     existing.genotypes[geno] = { ...genoData, source: 'clinvar' };
                                 } else {
                                     const snpediaMag = existingGeno.magnitude || 0;
+                                    const snpediaSummary = existingGeno.summary || '';
 
-                                    // ClinVar ALWAYS overrides SNPedia for clinical variants
-                                    // This handles both cases:
+                                    // Don't let ClinVar override if SNPedia says this is a common genotype
+                                    // This prevents strand errors in ClinVar from causing false positives
+                                    if (this.isCommonGenotype(snpediaSummary) && clinvarMag >= 2) {
+                                        this.conflicts.push({
+                                            rsid: rsidLower,
+                                            type: 'blocked_override',
+                                            genotype: geno,
+                                            reason: 'SNPedia indicates common genotype',
+                                            snpediaMagnitude: snpediaMag,
+                                            clinvarMagnitude: clinvarMag,
+                                            snpediaSummary: snpediaSummary,
+                                            clinvarSummary: genoData.summary
+                                        });
+                                        // Don't override - SNPedia's "common" designation takes priority
+                                    }
+                                    // ClinVar overrides SNPedia for clinical variants when:
                                     // 1. ClinVar says normal but SNPedia says pathogenic (false positive fix)
-                                    // 2. ClinVar says pathogenic but SNPedia disagrees
-                                    if (clinvarMag !== snpediaMag && (clinvarMag >= 2 || snpediaMag >= 2)) {
+                                    // 2. ClinVar says pathogenic and SNPedia doesn't indicate it's common
+                                    else if (clinvarMag !== snpediaMag && (clinvarMag >= 2 || snpediaMag >= 2)) {
                                         this.stats.clinvarOverrides++;
                                         this.conflicts.push({
                                             rsid: rsidLower,
@@ -160,7 +191,7 @@ class DatabaseService {
                                             genotype: geno,
                                             snpediaMagnitude: snpediaMag,
                                             clinvarMagnitude: clinvarMag,
-                                            snpediaSummary: existingGeno.summary,
+                                            snpediaSummary: snpediaSummary,
                                             clinvarSummary: genoData.summary
                                         });
                                         existing.genotypes[geno] = { ...genoData, source: 'clinvar' };
@@ -204,7 +235,7 @@ class DatabaseService {
                         console.log(`  ClinVar overrode ${this.stats.clinvarOverrides} SNPedia genotypes`);
                     }
                     if (this.stats.strandMismatches > 0) {
-                        console.log(`  ⚠️  Detected ${this.stats.strandMismatches} potential strand mismatches`);
+                        console.log(`  \x1b[31m Detected ${this.stats.strandMismatches} potential strand mismatches\x1b[0m`);
                     }
                     resolve();
                 });
@@ -295,6 +326,46 @@ class DatabaseService {
 
                 rl.on('error', reject);
             });
+        }
+
+        // Apply manual corrections (persists across database updates)
+        const correctionsPath = path.join(dataDir, 'database-corrections.json');
+        if (fs.existsSync(correctionsPath)) {
+            console.log('Applying manual corrections...');
+            try {
+                const corrections = JSON.parse(fs.readFileSync(correctionsPath, 'utf-8'));
+                let applied = 0;
+
+                for (const correction of corrections.corrections || []) {
+                    const rsidLower = correction.rsid.toLowerCase();
+                    const existing = this.database.get(rsidLower);
+
+                    if (existing) {
+                        // Override genotypes with corrected values
+                        for (const [geno, genoData] of Object.entries(correction.genotypes)) {
+                            existing.genotypes[geno] = {
+                                ...genoData,
+                                source: 'manual_correction',
+                                correctionReason: correction.reason
+                            };
+                        }
+                        applied++;
+                    } else {
+                        // Add new entry if it doesn't exist
+                        this.database.set(rsidLower, {
+                            source: 'manual_correction',
+                            genotypes: correction.genotypes,
+                            correctionReason: correction.reason
+                        });
+                        applied++;
+                    }
+                }
+
+                this.stats.correctionsApplied = applied;
+                console.log(`  Applied ${applied} manual corrections`);
+            } catch (err) {
+                console.error('  Error loading corrections:', err.message);
+            }
         }
 
         this.stats.totalCount = this.database.size;

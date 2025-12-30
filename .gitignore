@@ -43,6 +43,7 @@ clinvar.json
 *.tsv
 clinvar.vcf.gz
 *.zip
+*backup*
 
 # Large database files (can be regenerated)
 # Uncomment if you don't want to track the SNPedia database
