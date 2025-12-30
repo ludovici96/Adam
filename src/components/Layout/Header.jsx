@@ -9,7 +9,7 @@ import { DestructiveModal } from '../common/DestructiveModal';
 import { clsx } from 'clsx';
 
 export function Header({ onExport }) {
-  const { resolvedTheme, toggleTheme } = useUI(); // Removing activeView/setActiveView
+  const { resolvedTheme, toggleTheme } = useUI();
   const { appState, APP_STATES, reset } = useApp();
   const { reset: resetAnalysis } = useAnalysis();
   const location = useLocation();
