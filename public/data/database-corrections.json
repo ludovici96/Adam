@@ -1,0 +1,58 @@
+{
+  "_meta": {
+    "description": "Manual corrections for SNPedia/ClinVar strand errors and misannotations",
+    "lastUpdated": "2025-12-30",
+    "howToUse": "Add entries here when you find database errors. Applied automatically on server load."
+  },
+  "corrections": [
+    {
+      "rsid": "rs797045192",
+      "reason": "Strand error - A is reference allele per dbSNP, not pathogenic",
+      "source": "https://www.ncbi.nlm.nih.gov/snp/rs797045192",
+      "genotypes": {
+        "AA": {
+          "magnitude": 0,
+          "repute": "Good",
+          "summary": "common/normal (homozygous reference)"
+        },
+        "AT": {
+          "magnitude": 3,
+          "repute": "Bad",
+          "summary": "Carrier of a Brown-Vialetto-Van Laere syndrome mutation"
+        },
+        "TT": {
+          "magnitude": 8,
+          "repute": "Bad",
+          "summary": "Brown-Vialetto-Van Laere syndrome type 1 mutation; riboflavin treatment recommended"
+        }
+      }
+    },
+    {
+      "rsid": "rs587779497",
+      "reason": "Strand error - G is reference on AncestryDNA strand, 99% of users have GG",
+      "source": "https://www.ncbi.nlm.nih.gov/snp/rs587779497",
+      "genotypes": {
+        "GG": {
+          "magnitude": 0,
+          "repute": "Good",
+          "summary": "common/normal (99% of Ancestry users have this genotype)"
+        },
+        "GT": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Ehlers-Danlos syndrome, type 4 (COL3A1) - carrier"
+        },
+        "TG": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Ehlers-Danlos syndrome, type 4 (COL3A1) - carrier"
+        },
+        "TT": {
+          "magnitude": 4,
+          "repute": "Bad",
+          "summary": "Ehlers-Danlos syndrome, type 4 (COL3A1) - Pathogenic"
+        }
+      }
+    }
+  ]
+}
