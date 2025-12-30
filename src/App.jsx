@@ -12,7 +12,7 @@ import { UploadView } from './components/upload/UploadView';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { ReportView } from './components/Report/ReportView';
 import { CompareView } from './components/compare/CompareView';
-import { SimulationLab } from './components/Simulation/SimulationLab'; // NEW
+import { SimulationLab } from './components/Simulation/SimulationLab';
 
 import { OnboardingFlow, useOnboarding } from './components/onboarding/OnboardingFlow';
 
@@ -166,7 +166,7 @@ function AppContent() {
               </motion.div>
             } />
 
-            {/* 5. Simulation Lab [NEW] */}
+            {/* 5. Simulation Lab */}
             <Route path="/simulation" element={
               <motion.div
                 key="simulation"

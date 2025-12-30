@@ -14,7 +14,7 @@ import { Button } from '../common/Button';
 export function SimulationLab() {
     const { emotionalProfile, matches, archetype } = useAnalysis();
 
-    // Changed: Track object of active substances { caffeine: 'High', alcohol: 2 }
+    // Track object of active substances { caffeine: 'High', alcohol: 2 }
     const [activeSubstances, setActiveSubstances] = useState({});
 
     // 1. Calculate Pharma Results (Static Genetic Profile)

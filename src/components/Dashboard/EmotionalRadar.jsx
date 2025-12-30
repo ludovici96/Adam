@@ -29,7 +29,7 @@ const CONFIDENCE_LABELS = {
 import { PowerHourClock } from './PowerHourClock';
 import { CircadianAnalyzer } from '../../analysis/CircadianAnalyzer';
 
-// ... existing imports ...
+
 
 export function EmotionalRadar() {
   const { emotionalProfile, partnerEmotionalProfile, setPartnerEmotionalProfile, matches } = useAnalysis();
@@ -54,9 +54,9 @@ export function EmotionalRadar() {
     const chronoData = analyzer.determineChronotype();
     const schedule = analyzer.generateSchedule(chronoData, archetype);
     return {
-      type: chronoData.type, // String 'Wolf'
-      label: chronoData.label, // String 'The Lunar Wolf'
-      branding: chronoData, // Full object if needed elsewhere
+      type: chronoData.type,
+      label: chronoData.label,
+      branding: chronoData,
       schedule
     };
   }, [matches, archetype]);
@@ -203,9 +203,9 @@ export function EmotionalRadar() {
                   showLabels={true}
                   showValues={false}
                   colors={{
-                    fill: '#e11d48', // Rose-600
+                    fill: '#e11d48',
                     stroke: '#e11d48',
-                    points: '#fb7185', // Rose-400
+                    points: '#fb7185',
                   }}
                 />
               </div>
@@ -219,9 +219,9 @@ export function EmotionalRadar() {
               showLabels={true}
               showValues={false}
               colors={{
-                fill: '#e11d48', // Rose-600
+                fill: '#e11d48',
                 stroke: '#e11d48',
-                points: '#fb7185', // Rose-400
+                points: '#fb7185',
               }}
             />
           )}
@@ -358,7 +358,7 @@ export function EmotionalRadar() {
                       </div>
                     </div>
 
-                    {/* Minigraph or Arrow? */}
+                    {/* Comparison Indicator */}
                     <div className="hidden sm:flex items-center gap-2 text-[10px] text-stone-400 font-mono opacity-50">
                       <span className="uppercase">{dynamic.uDetails.title}</span>
                       <span>vs</span>

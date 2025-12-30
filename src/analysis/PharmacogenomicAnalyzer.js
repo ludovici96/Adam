@@ -70,14 +70,13 @@ export const PHARMA_DATABASE = {
                 reference: 'C-allele increases anxiety response (replicated).'
             },
             {
-                rsid: 'rs1110976',
-                gene: 'DRD2',
+                rsid: 'rs1800497',
+                gene: 'ANKK1/DRD2',
                 alleles: {
-                    // Deletion is tricky to map, assuming 'Del' or specific encoding.
-                    // For now, mapping common variants.
-                    'T': { effect: 'Normal', weight: 1.0, type: 'Receptor' }
+                    'A': { effect: 'Sensitive', weight: 1.3, type: 'Receptor' }, // Taq1A A1 - reduced D2 receptor density
+                    'G': { effect: 'Normal', weight: 1.0, type: 'Receptor' }     // Taq1A A2 - normal D2 density
                 },
-                reference: 'DRD2 availability modulates jitter threshold. (Placeholder for full variant).'
+                reference: 'Taq1A (A1 allele) reduces DRD2 density by ~30%, increasing sensitivity to dopaminergic stimulation from caffeine.'
             }
         ]
     },

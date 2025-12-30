@@ -16,13 +16,33 @@ class DatabaseService {
         this.database = new Map();
         this.positionIndex = new Map();
         this.isLoaded = false;
+        this.conflicts = []; // Track source conflicts for validation
         this.stats = {
             snpediaCount: 0,
             clinvarCount: 0,
             gwasCount: 0,
             totalCount: 0,
-            loadTime: 0
+            loadTime: 0,
+            clinvarOverrides: 0,
+            strandMismatches: 0
         };
+    }
+
+    // Get reverse complement of a genotype (for strand comparison)
+    reverseComplement(genotype) {
+        const map = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' };
+        return genotype.split('').map(b => map[b] || b).join('');
+    }
+
+    // Check if two genotypes might be strand-flipped versions of each other
+    isStrandFlipped(geno1, geno2) {
+        return this.reverseComplement(geno1) === geno2;
+    }
+
+    // Get max magnitude from a genotypes object
+    getMaxMagnitude(genotypes) {
+        if (!genotypes) return 0;
+        return Math.max(0, ...Object.values(genotypes).map(g => g.magnitude || 0));
     }
 
     async load() {
@@ -82,12 +102,91 @@ class DatabaseService {
                             }
                         }
                     } else {
-                        // Merge genotypes from ClinVar that aren't in SNPedia
+                        // Merge genotypes from ClinVar - ClinVar is authoritative for clinical variants
                         const existing = this.database.get(rsidLower);
                         if (data.genotypes && existing.genotypes) {
+                            const snpediaMaxMag = this.getMaxMagnitude(existing.genotypes);
+                            const clinvarMaxMag = this.getMaxMagnitude(data.genotypes);
+
+                            // Detect potential strand mismatches for high-magnitude variants
+                            if (snpediaMaxMag >= 3 || clinvarMaxMag >= 3) {
+                                const snpediaGenos = Object.keys(existing.genotypes);
+                                const clinvarGenos = Object.keys(data.genotypes);
+
+                                for (const sGeno of snpediaGenos) {
+                                    for (const cGeno of clinvarGenos) {
+                                        if (this.isStrandFlipped(sGeno, cGeno)) {
+                                            const sMag = existing.genotypes[sGeno]?.magnitude || 0;
+                                            const cMag = data.genotypes[cGeno]?.magnitude || 0;
+
+                                            // If magnitudes are swapped (one says normal, other says pathogenic)
+                                            if ((sMag >= 3 && cMag === 0) || (cMag >= 3 && sMag === 0)) {
+                                                this.stats.strandMismatches++;
+                                                this.conflicts.push({
+                                                    rsid: rsidLower,
+                                                    type: 'strand_mismatch',
+                                                    snpediaGenotype: sGeno,
+                                                    snpediaMagnitude: sMag,
+                                                    clinvarGenotype: cGeno,
+                                                    clinvarMagnitude: cMag,
+                                                    snpediaSummary: existing.genotypes[sGeno]?.summary,
+                                                    clinvarSummary: data.genotypes[cGeno]?.summary
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
                             for (const [geno, genoData] of Object.entries(data.genotypes)) {
-                                if (!existing.genotypes[geno]) {
-                                    existing.genotypes[geno] = genoData;
+                                const existingGeno = existing.genotypes[geno];
+                                const clinvarMag = genoData.magnitude || 0;
+
+                                if (!existingGeno) {
+                                    // Add missing genotypes from ClinVar
+                                    existing.genotypes[geno] = { ...genoData, source: 'clinvar' };
+                                } else {
+                                    const snpediaMag = existingGeno.magnitude || 0;
+
+                                    // ClinVar ALWAYS overrides SNPedia for clinical variants
+                                    // This handles both cases:
+                                    // 1. ClinVar says normal but SNPedia says pathogenic (false positive fix)
+                                    // 2. ClinVar says pathogenic but SNPedia disagrees
+                                    if (clinvarMag !== snpediaMag && (clinvarMag >= 2 || snpediaMag >= 2)) {
+                                        this.stats.clinvarOverrides++;
+                                        this.conflicts.push({
+                                            rsid: rsidLower,
+                                            type: 'magnitude_override',
+                                            genotype: geno,
+                                            snpediaMagnitude: snpediaMag,
+                                            clinvarMagnitude: clinvarMag,
+                                            snpediaSummary: existingGeno.summary,
+                                            clinvarSummary: genoData.summary
+                                        });
+                                        existing.genotypes[geno] = { ...genoData, source: 'clinvar' };
+                                    }
+                                }
+                            }
+
+                            // Also check for strand-flipped genotypes and apply ClinVar data
+                            for (const [geno, genoData] of Object.entries(data.genotypes)) {
+                                const flippedGeno = this.reverseComplement(geno);
+                                const existingFlipped = existing.genotypes[flippedGeno];
+                                const clinvarMag = genoData.magnitude || 0;
+
+                                // If ClinVar has data for the flipped genotype and SNPedia doesn't have direct match
+                                if (existingFlipped && !existing.genotypes[geno]) {
+                                    const snpediaMag = existingFlipped.magnitude || 0;
+
+                                    // Apply ClinVar interpretation to the flipped genotype if there's a magnitude conflict
+                                    if ((clinvarMag >= 2 || snpediaMag >= 2) && clinvarMag !== snpediaMag) {
+                                        this.stats.clinvarOverrides++;
+                                        existing.genotypes[flippedGeno] = {
+                                            ...genoData,
+                                            source: 'clinvar',
+                                            note: `Strand-corrected from ${geno}`
+                                        };
+                                    }
                                 }
                             }
                         }
@@ -101,6 +200,12 @@ class DatabaseService {
                 pipeline.on('end', () => {
                     this.stats.clinvarCount = added;
                     console.log(`  Added ${added.toLocaleString()} unique ClinVar entries`);
+                    if (this.stats.clinvarOverrides > 0) {
+                        console.log(`  ClinVar overrode ${this.stats.clinvarOverrides} SNPedia genotypes`);
+                    }
+                    if (this.stats.strandMismatches > 0) {
+                        console.log(`  ⚠️  Detected ${this.stats.strandMismatches} potential strand mismatches`);
+                    }
                     resolve();
                 });
 
@@ -252,8 +357,22 @@ class DatabaseService {
         return {
             ...this.stats,
             memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-            isLoaded: this.isLoaded
+            isLoaded: this.isLoaded,
+            conflictCount: this.conflicts.length
         };
+    }
+
+    // Get all detected conflicts between sources (for validation)
+    getConflicts() {
+        return this.conflicts;
+    }
+
+    // Get high-priority conflicts (strand mismatches and high-magnitude disagreements)
+    getCriticalConflicts() {
+        return this.conflicts.filter(c =>
+            c.type === 'strand_mismatch' ||
+            (c.snpediaMagnitude >= 4 || c.clinvarMagnitude >= 4)
+        );
     }
 }
 
