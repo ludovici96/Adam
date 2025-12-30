@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Manual corrections for SNPedia/ClinVar strand errors and misannotations",
-    "lastUpdated": "2025-12-30",
+    "lastUpdated": "2025-12-31",
     "howToUse": "Add entries here when you find database errors. Applied automatically on server load."
   },
   "corrections": [
@@ -51,6 +51,168 @@
           "magnitude": 4,
           "repute": "Bad",
           "summary": "Ehlers-Danlos syndrome, type 4 (COL3A1) - Pathogenic"
+        }
+      }
+    },
+    {
+      "rsid": "rs199476396",
+      "reason": "Strand error - G is reference allele, GG is common/normal per ClinVar",
+      "source": "https://www.ncbi.nlm.nih.gov/snp/rs199476396",
+      "genotypes": {
+        "GG": {
+          "magnitude": 0,
+          "repute": "Good",
+          "summary": "common/normal (homozygous reference)"
+        },
+        "GC": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Congenital myasthenic syndrome 8 (AGRN) - carrier"
+        },
+        "CG": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Congenital myasthenic syndrome 8 (AGRN) - carrier"
+        },
+        "CC": {
+          "magnitude": 4,
+          "repute": "Bad",
+          "summary": "Congenital myasthenic syndrome 8 (AGRN) - Pathogenic"
+        }
+      }
+    },
+    {
+      "rsid": "rs752746786",
+      "reason": "Strand error - A is reference allele, AA is common/normal per ClinVar",
+      "source": "https://www.ncbi.nlm.nih.gov/snp/rs752746786",
+      "genotypes": {
+        "AA": {
+          "magnitude": 0,
+          "repute": "Good",
+          "summary": "common/normal (homozygous reference)"
+        },
+        "AT": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Intellectual disability, autosomal dominant 42 - carrier"
+        },
+        "TA": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Intellectual disability, autosomal dominant 42 - carrier"
+        },
+        "TT": {
+          "magnitude": 4,
+          "repute": "Bad",
+          "summary": "Intellectual disability, autosomal dominant 42 - Pathogenic"
+        }
+      }
+    },
+    {
+      "rsid": "rs397514742",
+      "reason": "Strand error - A is reference allele, AA is common/normal per ClinVar",
+      "source": "https://www.ncbi.nlm.nih.gov/snp/rs397514742",
+      "genotypes": {
+        "AA": {
+          "magnitude": 0,
+          "repute": "Good",
+          "summary": "common/normal (homozygous reference)"
+        },
+        "AT": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Left ventricular noncompaction cardiomyopathy 8 (PRDM16) - carrier"
+        },
+        "TA": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Left ventricular noncompaction cardiomyopathy 8 (PRDM16) - carrier"
+        },
+        "TT": {
+          "magnitude": 4,
+          "repute": "Bad",
+          "summary": "Left ventricular noncompaction cardiomyopathy 8 (PRDM16) - Pathogenic"
+        }
+      }
+    },
+    {
+      "rsid": "rs398122817",
+      "reason": "Strand error - C is reference allele, CC is common/normal per ClinVar",
+      "source": "https://www.ncbi.nlm.nih.gov/snp/rs398122817",
+      "genotypes": {
+        "CC": {
+          "magnitude": 0,
+          "repute": "Good",
+          "summary": "common/normal (homozygous reference)"
+        },
+        "CG": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Cortisone reductase deficiency 1 (H6PD) - carrier"
+        },
+        "GC": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Cortisone reductase deficiency 1 (H6PD) - carrier"
+        },
+        "GG": {
+          "magnitude": 4,
+          "repute": "Bad",
+          "summary": "Cortisone reductase deficiency 1 (H6PD) - Pathogenic"
+        }
+      }
+    },
+    {
+      "rsid": "rs387907293",
+      "reason": "Strand error - C is reference allele, CC is common/normal per ClinVar",
+      "source": "https://www.ncbi.nlm.nih.gov/snp/rs387907293",
+      "genotypes": {
+        "CC": {
+          "magnitude": 0,
+          "repute": "Good",
+          "summary": "common/normal (homozygous reference)"
+        },
+        "CG": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Leber congenital amaurosis 9 (NMNAT1) - carrier"
+        },
+        "GC": {
+          "magnitude": 3.5,
+          "repute": "Bad",
+          "summary": "Leber congenital amaurosis 9 (NMNAT1) - carrier"
+        },
+        "GG": {
+          "magnitude": 4,
+          "repute": "Bad",
+          "summary": "Leber congenital amaurosis 9 (NMNAT1) - Pathogenic"
+        }
+      }
+    },
+    {
+      "rsid": "rs771540767",
+      "reason": "Strand error - G is reference allele, GG is common/normal per SNPedia/ClinVar",
+      "source": "https://www.ncbi.nlm.nih.gov/snp/rs771540767",
+      "genotypes": {
+        "GG": {
+          "magnitude": 0,
+          "repute": "Good",
+          "summary": "common/normal (homozygous reference)"
+        },
+        "AG": {
+          "magnitude": 3,
+          "repute": "Bad",
+          "summary": "Hypophosphatasia (ALPL) - carrier"
+        },
+        "GA": {
+          "magnitude": 3,
+          "repute": "Bad",
+          "summary": "Hypophosphatasia (ALPL) - carrier"
+        },
+        "AA": {
+          "magnitude": 4,
+          "repute": "Bad",
+          "summary": "Hypophosphatasia (ALPL) - Pathogenic"
         }
       }
     }

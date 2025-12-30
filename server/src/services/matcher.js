@@ -54,11 +54,6 @@ function inferCategory(summary, existingCategory) {
     return 'other';
 }
 
-function reverseComplement(genotype) {
-    const map = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' };
-    return genotype.split('').map(b => map[b] || b).join('');
-}
-
 /**
  * Extract the risk allele from GWAS riskAllele field
  * Format is typically "rs12345-A" or "rs12345-?"
@@ -131,40 +126,17 @@ export function matchVariants(variants) {
 
         if (snpData) {
             const userGenotype = v.genotype;
-            let matchData = snpData.genotypes?.[userGenotype];
-            let matchedGenotype = userGenotype;
+            const matchData = snpData.genotypes?.[userGenotype];
 
-            if (!matchData && snpData.genotypes) {
-                const rev = reverseComplement(userGenotype);
-                const revMatchData = snpData.genotypes[rev];
-
-                // Only use reverse complement for LOW magnitude matches (common variants)
-                // High magnitude (>=3) pathogenic variants should NOT use reverse complement
-                // as this often causes false positives with ClinVar data
-                if (revMatchData && (revMatchData.magnitude || 0) < 3) {
-                    matchData = revMatchData;
-                    matchedGenotype = rev;
-                }
-                // For high magnitude, check if user might have the NORMAL genotype
-                // by verifying if there's a low-magnitude entry for their actual genotype
-                else if (revMatchData && (revMatchData.magnitude || 0) >= 3) {
-                    // Don't match - this is likely a false positive
-                    // The user probably has the reference/normal genotype on opposite strand
-                    stats.genotypeMisses++;
-                    continue;
-                }
-            }
-
-            // Case 1: We have genotype-specific data from SNPedia/ClinVar
+            // Only match if we have an exact genotype match - no reverse complement guessing
+            // This prevents false positives from strand orientation mismatches
             if (matchData) {
                 const summary = matchData.summary || '';
                 const inferredCategory = inferCategory(summary, snpData.category);
-                const strandFlipped = matchedGenotype !== userGenotype;
 
                 matches.push({
                     rsid: rsid || `${v.chrom}:${v.pos}`,
                     userGenotype,
-                    matchedGenotype: strandFlipped ? matchedGenotype : undefined,
                     magnitude: matchData.magnitude || 0,
                     repute: matchData.repute || 'neutral',
                     summary: summary,
@@ -172,7 +144,6 @@ export function matchVariants(variants) {
                     pos: v.pos,
                     category: inferredCategory,
                     source: snpData.source,
-                    strandFlipped: strandFlipped || undefined,
                     gwasAssociations: snpData.gwasAssociations || null
                 });
             }
