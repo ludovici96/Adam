@@ -16,7 +16,7 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
 
   const snpCount = useAPI && apiStats?.totalCount
     ? `${(apiStats.totalCount / 1000000).toFixed(1)}M+ SNPs`
-    : '70,000+ SNPs';
+    : 'Over 3 Million SNPs';
 
   const features = [
     {
@@ -32,7 +32,7 @@ export function UploadView({ onFileSelect, useAPI, apiStats }) {
     {
       icon: useAPI ? Server : Eye,
       title: snpCount,
-      description: useAPI ? 'SNPedia + ClinVar databases' : 'Comprehensive SNPedia database'
+      description: useAPI ? 'SNPedia + ClinVar databases + GWAS' : 'Comprehensive database'
     }
   ];
 

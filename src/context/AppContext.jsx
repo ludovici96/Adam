@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
+import localforage from 'localforage';
+
+// Configure localforage
+localforage.config({
+  name: 'AdamApp',
+  storeName: 'dna_session'
+});
 
 // Application states
 export const APP_STATES = {
@@ -24,7 +31,8 @@ const initialState = {
   },
   error: null,
   startTime: null,
-  endTime: null
+  endTime: null,
+  isRestoring: true // New flag for initial hydration
 };
 
 const ACTIONS = {
@@ -32,7 +40,8 @@ const ACTIONS = {
   SET_STATE: 'SET_STATE',
   SET_PROGRESS: 'SET_PROGRESS',
   SET_ERROR: 'SET_ERROR',
-  RESET: 'RESET'
+  RESET: 'RESET',
+  RESTORE_COMPLETE: 'RESTORE_COMPLETE'
 };
 
 function appReducer(state, action) {
@@ -74,7 +83,17 @@ function appReducer(state, action) {
       };
 
     case ACTIONS.RESET:
-      return initialState;
+      return {
+        ...initialState,
+        isRestoring: false
+      };
+
+    case ACTIONS.RESTORE_COMPLETE:
+      return {
+        ...state,
+        ...action.payload,
+        isRestoring: false
+      };
 
     default:
       return state;
@@ -86,6 +105,44 @@ const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+
+  // Hydrate state on mount
+  useEffect(() => {
+    const hydrate = async () => {
+      try {
+        const savedState = await localforage.getItem('appState');
+        if (savedState) {
+          // If we have saved state, we need to restore it
+          // Note: Binary file objects cannot be stored in IndexedDB directly in this way usually,
+          // but we care more about the analysis results which are likely stored in AnalysisContext.
+          // For AppContext, we mainly care about the metadata and 'COMPLETE' status.
+          dispatch({ type: ACTIONS.RESTORE_COMPLETE, payload: savedState });
+        } else {
+          dispatch({ type: ACTIONS.RESTORE_COMPLETE, payload: {} });
+        }
+      } catch (err) {
+        console.error('Failed to hydrate state:', err);
+        dispatch({ type: ACTIONS.RESTORE_COMPLETE, payload: {} });
+      }
+    };
+    hydrate();
+  }, []);
+
+  // Persist state when essential fields change
+  useEffect(() => {
+    if (state.appState === APP_STATES.COMPLETE && !state.isRestoring) {
+      // Create a persistable version of state (exclude large binary file objects if needed, though IndexedDB can handle blobs)
+      // Here we store metadata. The heavy lifting of storing analysis results should happen in AnalysisContext or a unified persistence layer.
+      const stateToSave = {
+        appState: state.appState,
+        fileName: state.fileName,
+        fileSize: state.fileSize,
+        fileType: state.fileType,
+        endTime: state.endTime
+      };
+      localforage.setItem('appState', stateToSave).catch(err => console.error('Failed to save state:', err));
+    }
+  }, [state.appState, state.fileName, state.fileSize, state.fileType, state.endTime, state.isRestoring]);
 
   const setFile = useCallback((file, fileType) => {
     dispatch({ type: ACTIONS.SET_FILE, payload: { file, fileType } });
@@ -103,7 +160,8 @@ export function AppProvider({ children }) {
     dispatch({ type: ACTIONS.SET_ERROR, payload: error });
   }, []);
 
-  const reset = useCallback(() => {
+  const reset = useCallback(async () => {
+    await localforage.clear(); // Clear storage on reset
     dispatch({ type: ACTIONS.RESET });
   }, []);
 
