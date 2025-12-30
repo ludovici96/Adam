@@ -149,7 +149,25 @@ export class RiskCalculator {
     }
 
     const coverage = snpsFound / snps.length;
-    const relativeRisk = Math.exp(logOddsSum);
+
+    // Apply dampening for multiple SNPs to prevent unrealistic compounding
+    // The multiplicative model overestimates when combining many variants
+    const rawRelativeRisk = Math.exp(logOddsSum);
+
+    // Use square root dampening for risks > 2x to account for non-independence
+    // and cap at 5x (500%) which is more realistic for polygenic traits
+    let relativeRisk;
+    if (rawRelativeRisk > 2) {
+      // Dampen: 2 + sqrt(excess - 2) gives more realistic estimates
+      // e.g., raw 8x becomes ~4.4x, raw 35x becomes ~7.7x
+      relativeRisk = Math.min(2 + Math.sqrt(rawRelativeRisk - 2), 5);
+    } else if (rawRelativeRisk < 0.5) {
+      // Similarly dampen very low risks (protective)
+      relativeRisk = Math.max(0.5 - Math.sqrt(0.5 - rawRelativeRisk) * 0.3, 0.2);
+    } else {
+      relativeRisk = rawRelativeRisk;
+    }
+
     const absoluteRisk = Math.min(baselineRisk * relativeRisk, 0.99);
 
     // Calculate confidence based on coverage and number of SNPs

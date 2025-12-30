@@ -70,33 +70,27 @@ function extractRiskAllele(riskAlleleStr) {
 }
 
 /**
- * Check if user's genotype contains a risk allele
- * Also checks reverse complement
- */
-function genotypeContainsRiskAllele(userGenotype, riskAllele) {
-    if (!riskAllele || !userGenotype) return false;
-
-    const allele = riskAllele.toUpperCase();
-    const complement = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' }[allele];
-
-    // Check if user genotype contains the risk allele or its complement
-    return userGenotype.toUpperCase().includes(allele) ||
-           (complement && userGenotype.toUpperCase().includes(complement));
-}
-
-/**
- * Count how many copies of risk allele user has (0, 1, or 2)
+ * Count how many copies of risk allele user has (0, 1, or 2) for dosage calculation
+ * Only counts exact matches on the user's reported strand.
+ * Does NOT count complement - that would incorrectly double the count for heterozygotes.
+ *
+ * Example: riskAllele='A', genotype='AT' → returns 1 (not 2)
+ * Example: riskAllele='A', genotype='AA' → returns 2
+ * Example: riskAllele='A', genotype='TT' → returns 0 (T is complement, not risk allele)
+ *
+ * @param {string} userGenotype - User's genotype (e.g., 'AT', 'GG')
+ * @param {string} riskAllele - The risk allele to count (e.g., 'A')
+ * @returns {number} Number of risk allele copies (0, 1, or 2)
  */
 function countRiskAlleles(userGenotype, riskAllele) {
     if (!riskAllele || !userGenotype) return 0;
 
     const allele = riskAllele.toUpperCase();
-    const complement = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' }[allele];
     const geno = userGenotype.toUpperCase();
 
     let count = 0;
     for (const base of geno) {
-        if (base === allele || base === complement) count++;
+        if (base === allele) count++;
     }
     return count;
 }
@@ -138,7 +132,7 @@ export function matchVariants(variants) {
         if (snpData) {
             const userGenotype = v.genotype;
             let matchData = snpData.genotypes?.[userGenotype];
-            let usedReverseComplement = false;
+            let matchedGenotype = userGenotype;
 
             if (!matchData && snpData.genotypes) {
                 const rev = reverseComplement(userGenotype);
@@ -149,7 +143,7 @@ export function matchVariants(variants) {
                 // as this often causes false positives with ClinVar data
                 if (revMatchData && (revMatchData.magnitude || 0) < 3) {
                     matchData = revMatchData;
-                    usedReverseComplement = true;
+                    matchedGenotype = rev;
                 }
                 // For high magnitude, check if user might have the NORMAL genotype
                 // by verifying if there's a low-magnitude entry for their actual genotype
@@ -165,10 +159,12 @@ export function matchVariants(variants) {
             if (matchData) {
                 const summary = matchData.summary || '';
                 const inferredCategory = inferCategory(summary, snpData.category);
+                const strandFlipped = matchedGenotype !== userGenotype;
 
                 matches.push({
                     rsid: rsid || `${v.chrom}:${v.pos}`,
                     userGenotype,
+                    matchedGenotype: strandFlipped ? matchedGenotype : undefined,
                     magnitude: matchData.magnitude || 0,
                     repute: matchData.repute || 'neutral',
                     summary: summary,
@@ -176,6 +172,7 @@ export function matchVariants(variants) {
                     pos: v.pos,
                     category: inferredCategory,
                     source: snpData.source,
+                    strandFlipped: strandFlipped || undefined,
                     gwasAssociations: snpData.gwasAssociations || null
                 });
             }
