@@ -24,7 +24,9 @@ class DatabaseService {
             totalCount: 0,
             loadTime: 0,
             clinvarOverrides: 0,
-            strandMismatches: 0
+            strandMismatches: 0,
+            correctionsApplied: 0,
+            correctionsSkipped: 0
         };
     }
 
@@ -125,42 +127,65 @@ class DatabaseService {
                             const clinvarMaxMag = this.getMaxMagnitude(data.genotypes);
 
                             // Detect potential strand mismatches for high-magnitude variants
+                            // Optimized: O(n) instead of O(n*m) using reverse complement lookup map
                             if (snpediaMaxMag >= 3 || clinvarMaxMag >= 3) {
-                                const snpediaGenos = Object.keys(existing.genotypes);
-                                const clinvarGenos = Object.keys(data.genotypes);
+                                // Build a map of ClinVar genotypes and their reverse complements
+                                const clinvarByFlipped = new Map();
+                                for (const [cGeno, cData] of Object.entries(data.genotypes)) {
+                                    const flipped = this.reverseComplement(cGeno);
+                                    clinvarByFlipped.set(flipped, { genotype: cGeno, data: cData });
+                                }
 
-                                for (const sGeno of snpediaGenos) {
-                                    for (const cGeno of clinvarGenos) {
-                                        if (this.isStrandFlipped(sGeno, cGeno)) {
-                                            const sMag = existing.genotypes[sGeno]?.magnitude || 0;
-                                            const cMag = data.genotypes[cGeno]?.magnitude || 0;
+                                // Single pass through SNPedia genotypes
+                                for (const [sGeno, sData] of Object.entries(existing.genotypes)) {
+                                    const clinvarFlipped = clinvarByFlipped.get(sGeno);
 
-                                            // If magnitudes are swapped (one says normal, other says pathogenic)
-                                            if ((sMag >= 3 && cMag === 0) || (cMag >= 3 && sMag === 0)) {
-                                                this.stats.strandMismatches++;
-                                                this.conflicts.push({
-                                                    rsid: rsidLower,
-                                                    type: 'strand_mismatch',
-                                                    snpediaGenotype: sGeno,
-                                                    snpediaMagnitude: sMag,
-                                                    clinvarGenotype: cGeno,
-                                                    clinvarMagnitude: cMag,
-                                                    snpediaSummary: existing.genotypes[sGeno]?.summary,
-                                                    clinvarSummary: data.genotypes[cGeno]?.summary
-                                                });
-                                            }
+                                    if (clinvarFlipped) {
+                                        const sMag = sData?.magnitude || 0;
+                                        const cMag = clinvarFlipped.data?.magnitude || 0;
+
+                                        // If magnitudes are swapped (one says normal, other says pathogenic)
+                                        if ((sMag >= 3 && cMag === 0) || (cMag >= 3 && sMag === 0)) {
+                                            this.stats.strandMismatches++;
+                                            this.conflicts.push({
+                                                rsid: rsidLower,
+                                                type: 'strand_mismatch',
+                                                snpediaGenotype: sGeno,
+                                                snpediaMagnitude: sMag,
+                                                clinvarGenotype: clinvarFlipped.genotype,
+                                                clinvarMagnitude: cMag,
+                                                snpediaSummary: sData?.summary,
+                                                clinvarSummary: clinvarFlipped.data?.summary
+                                            });
                                         }
                                     }
                                 }
                             }
 
+                            // Single pass: handle direct matches and strand-flipped matches together
+                            const processedGenotypes = new Set();
+
                             for (const [geno, genoData] of Object.entries(data.genotypes)) {
-                                const existingGeno = existing.genotypes[geno];
                                 const clinvarMag = genoData.magnitude || 0;
+                                const flippedGeno = this.reverseComplement(geno);
+
+                                // Check for direct match first
+                                const existingDirect = existing.genotypes[geno];
+                                // Check for strand-flipped match
+                                const existingFlipped = !existingDirect ? existing.genotypes[flippedGeno] : null;
+
+                                // Determine which genotype we're working with
+                                const targetGeno = existingDirect ? geno : (existingFlipped ? flippedGeno : geno);
+                                const existingGeno = existingDirect || existingFlipped;
+                                const isStrandFlipped = !existingDirect && existingFlipped;
+
+                                // Skip if we already processed this genotype in this merge
+                                if (processedGenotypes.has(targetGeno)) continue;
 
                                 if (!existingGeno) {
                                     // Add missing genotypes from ClinVar
                                     existing.genotypes[geno] = { ...genoData, source: 'clinvar' };
+                                    processedGenotypes.add(geno);
                                 } else {
                                     const snpediaMag = existingGeno.magnitude || 0;
                                     const snpediaSummary = existingGeno.summary || '';
@@ -171,12 +196,13 @@ class DatabaseService {
                                         this.conflicts.push({
                                             rsid: rsidLower,
                                             type: 'blocked_override',
-                                            genotype: geno,
+                                            genotype: targetGeno,
                                             reason: 'SNPedia indicates common genotype',
                                             snpediaMagnitude: snpediaMag,
                                             clinvarMagnitude: clinvarMag,
                                             snpediaSummary: snpediaSummary,
-                                            clinvarSummary: genoData.summary
+                                            clinvarSummary: genoData.summary,
+                                            strandFlipped: isStrandFlipped
                                         });
                                         // Don't override - SNPedia's "common" designation takes priority
                                     }
@@ -187,37 +213,22 @@ class DatabaseService {
                                         this.stats.clinvarOverrides++;
                                         this.conflicts.push({
                                             rsid: rsidLower,
-                                            type: 'magnitude_override',
-                                            genotype: geno,
+                                            type: isStrandFlipped ? 'strand_corrected_override' : 'magnitude_override',
+                                            genotype: targetGeno,
+                                            clinvarGenotype: isStrandFlipped ? geno : undefined,
                                             snpediaMagnitude: snpediaMag,
                                             clinvarMagnitude: clinvarMag,
                                             snpediaSummary: snpediaSummary,
                                             clinvarSummary: genoData.summary
                                         });
-                                        existing.genotypes[geno] = { ...genoData, source: 'clinvar' };
-                                    }
-                                }
-                            }
-
-                            // Also check for strand-flipped genotypes and apply ClinVar data
-                            for (const [geno, genoData] of Object.entries(data.genotypes)) {
-                                const flippedGeno = this.reverseComplement(geno);
-                                const existingFlipped = existing.genotypes[flippedGeno];
-                                const clinvarMag = genoData.magnitude || 0;
-
-                                // If ClinVar has data for the flipped genotype and SNPedia doesn't have direct match
-                                if (existingFlipped && !existing.genotypes[geno]) {
-                                    const snpediaMag = existingFlipped.magnitude || 0;
-
-                                    // Apply ClinVar interpretation to the flipped genotype if there's a magnitude conflict
-                                    if ((clinvarMag >= 2 || snpediaMag >= 2) && clinvarMag !== snpediaMag) {
-                                        this.stats.clinvarOverrides++;
-                                        existing.genotypes[flippedGeno] = {
+                                        existing.genotypes[targetGeno] = {
                                             ...genoData,
                                             source: 'clinvar',
-                                            note: `Strand-corrected from ${geno}`
+                                            strandCorrected: isStrandFlipped ? geno : undefined
                                         };
                                     }
+
+                                    processedGenotypes.add(targetGeno);
                                 }
                             }
                         }
@@ -335,18 +346,54 @@ class DatabaseService {
             try {
                 const corrections = JSON.parse(fs.readFileSync(correctionsPath, 'utf-8'));
                 let applied = 0;
+                let skipped = 0;
 
-                for (const correction of corrections.corrections || []) {
+                for (const [index, correction] of (corrections.corrections || []).entries()) {
+                    // Validate required fields
+                    if (!correction || typeof correction !== 'object') {
+                        console.warn(`  Skipping correction #${index + 1}: not an object`);
+                        skipped++;
+                        continue;
+                    }
+
+                    if (!correction.rsid || typeof correction.rsid !== 'string') {
+                        console.warn(`  Skipping correction #${index + 1}: missing or invalid 'rsid'`);
+                        skipped++;
+                        continue;
+                    }
+
+                    if (!correction.genotypes || typeof correction.genotypes !== 'object' || Object.keys(correction.genotypes).length === 0) {
+                        console.warn(`  Skipping correction for ${correction.rsid}: missing or empty 'genotypes'`);
+                        skipped++;
+                        continue;
+                    }
+
+                    if (!correction.reason) {
+                        console.warn(`  Warning: correction for ${correction.rsid} has no 'reason' field`);
+                        // Continue anyway - reason is recommended but not strictly required
+                    }
+
                     const rsidLower = correction.rsid.toLowerCase();
                     const existing = this.database.get(rsidLower);
 
                     if (existing) {
+                        // Ensure existing entry has genotypes object
+                        if (!existing.genotypes) {
+                            existing.genotypes = {};
+                        }
+
                         // Override genotypes with corrected values
                         for (const [geno, genoData] of Object.entries(correction.genotypes)) {
+                            // Validate genotype data
+                            if (!genoData || typeof genoData !== 'object') {
+                                console.warn(`  Skipping invalid genotype '${geno}' for ${correction.rsid}`);
+                                continue;
+                            }
+
                             existing.genotypes[geno] = {
                                 ...genoData,
                                 source: 'manual_correction',
-                                correctionReason: correction.reason
+                                correctionReason: correction.reason || 'No reason provided'
                             };
                         }
                         applied++;
@@ -354,15 +401,16 @@ class DatabaseService {
                         // Add new entry if it doesn't exist
                         this.database.set(rsidLower, {
                             source: 'manual_correction',
-                            genotypes: correction.genotypes,
-                            correctionReason: correction.reason
+                            genotypes: { ...correction.genotypes },
+                            correctionReason: correction.reason || 'No reason provided'
                         });
                         applied++;
                     }
                 }
 
                 this.stats.correctionsApplied = applied;
-                console.log(`  Applied ${applied} manual corrections`);
+                this.stats.correctionsSkipped = skipped;
+                console.log(`  Applied ${applied} manual corrections${skipped > 0 ? `, skipped ${skipped} invalid` : ''}`);
             } catch (err) {
                 console.error('  Error loading corrections:', err.message);
             }

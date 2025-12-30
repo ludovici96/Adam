@@ -40,9 +40,27 @@ async function loadClinvarStreaming() {
 
     return new Promise((resolve, reject) => {
         let count = 0;
-        const pipeline = fs.createReadStream(CLINVAR_PATH)
-            .pipe(parser())
-            .pipe(streamObject());
+
+        // Create streams separately to attach error handlers to each
+        const sourceStream = fs.createReadStream(CLINVAR_PATH);
+        const jsonParser = parser();
+        const objectStreamer = streamObject();
+
+        // Attach error handlers to all streams in the pipeline
+        sourceStream.on('error', (err) => {
+            reject(new Error(`Source stream error: ${err.message}`));
+        });
+
+        jsonParser.on('error', (err) => {
+            reject(new Error(`JSON parser error: ${err.message}`));
+        });
+
+        objectStreamer.on('error', (err) => {
+            reject(new Error(`Object streamer error: ${err.message}`));
+        });
+
+        // Build the pipeline
+        const pipeline = sourceStream.pipe(jsonParser).pipe(objectStreamer);
 
         pipeline.on('data', ({ key: rsid, value: data }) => {
             clinvar.set(rsid.toLowerCase(), data);
@@ -240,27 +258,75 @@ async function main() {
         console.log('\n--- Applying Fixes ---\n');
 
         let fixed = 0;
+        const processedPairs = new Set(); // Track processed genotype pairs to avoid double-fixing
+
         for (const issue of issues.strandMismatches) {
             const rsidLower = issue.rsid.toLowerCase();
+            const pairKey = `${rsidLower}:${[issue.snpediaGenotype, issue.clinvarGenotype].sort().join('-')}`;
+
+            // Skip if we already processed this genotype pair
+            if (processedPairs.has(pairKey)) continue;
+            processedPairs.add(pairKey);
+
             if (snpedia[rsidLower] || snpedia[issue.rsid]) {
                 const entry = snpedia[rsidLower] || snpedia[issue.rsid];
 
                 // Get ClinVar data for this SNP
                 const clinvarEntry = clinvar.get(rsidLower);
                 if (clinvarEntry && clinvarEntry.genotypes) {
-                    // Replace the problematic genotype with ClinVar's interpretation
-                    const oldGeno = entry.genotypes[issue.snpediaGenotype];
-                    const clinvarGeno = clinvarEntry.genotypes[issue.clinvarGenotype];
+                    const snpediaGeno1 = issue.snpediaGenotype; // e.g., 'AA'
+                    const snpediaGeno2 = issue.clinvarGenotype; // e.g., 'TT' (the complement)
 
-                    if (oldGeno && clinvarGeno) {
-                        // Swap the interpretation
-                        entry.genotypes[issue.snpediaGenotype] = {
-                            ...clinvarGeno,
+                    // Get old SNPedia values for both genotypes
+                    const oldSnpedia1 = entry.genotypes[snpediaGeno1];
+                    const oldSnpedia2 = entry.genotypes[snpediaGeno2];
+
+                    // Get ClinVar values for both genotypes
+                    const clinvar1 = clinvarEntry.genotypes[snpediaGeno1];
+                    const clinvar2 = clinvarEntry.genotypes[snpediaGeno2];
+
+                    // Properly swap BOTH genotypes using ClinVar's interpretations
+                    if (oldSnpedia1 && clinvar1) {
+                        entry.genotypes[snpediaGeno1] = {
+                            ...clinvar1,
                             _fixedFrom: 'strand_mismatch',
-                            _originalMagnitude: oldGeno.magnitude
+                            _originalMagnitude: oldSnpedia1.magnitude,
+                            _originalSummary: oldSnpedia1.summary
                         };
-                        fixed++;
                     }
+
+                    if (oldSnpedia2 && clinvar2) {
+                        entry.genotypes[snpediaGeno2] = {
+                            ...clinvar2,
+                            _fixedFrom: 'strand_mismatch',
+                            _originalMagnitude: oldSnpedia2.magnitude,
+                            _originalSummary: oldSnpedia2.summary
+                        };
+                    }
+
+                    // If ClinVar doesn't have one of the genotypes, swap using the other's old value
+                    if (oldSnpedia1 && !clinvar1 && oldSnpedia2) {
+                        entry.genotypes[snpediaGeno1] = {
+                            magnitude: oldSnpedia2.magnitude,
+                            repute: oldSnpedia2.repute,
+                            summary: oldSnpedia2.summary,
+                            _fixedFrom: 'strand_swap',
+                            _swappedWith: snpediaGeno2
+                        };
+                    }
+
+                    if (oldSnpedia2 && !clinvar2 && oldSnpedia1) {
+                        entry.genotypes[snpediaGeno2] = {
+                            magnitude: oldSnpedia1.magnitude,
+                            repute: oldSnpedia1.repute,
+                            summary: oldSnpedia1.summary,
+                            _fixedFrom: 'strand_swap',
+                            _swappedWith: snpediaGeno1
+                        };
+                    }
+
+                    fixed++;
+                    console.log(`  Fixed ${issue.rsid}: swapped ${snpediaGeno1} ↔ ${snpediaGeno2}`);
                 }
             }
         }
@@ -269,7 +335,7 @@ async function main() {
             // Backup original
             const backupPath = SNPEDIA_PATH + '.backup.' + Date.now();
             fs.copyFileSync(SNPEDIA_PATH, backupPath);
-            console.log(`  Backed up original to: ${backupPath}`);
+            console.log(`\n  Backed up original to: ${backupPath}`);
 
             // Write fixed version
             fs.writeFileSync(SNPEDIA_PATH, JSON.stringify(snpedia, null, 2));
