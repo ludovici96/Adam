@@ -25,8 +25,13 @@ const CONFIDENCE_LABELS = {
   insufficient: { label: 'Not enough data', color: 'text-red-500 dark:text-red-400' }
 };
 
+import { PowerHourClock } from './PowerHourClock';
+import { CircadianAnalyzer } from '../../analysis/CircadianAnalyzer';
+
+// ... existing imports ...
+
 export function EmotionalRadar() {
-  const { emotionalProfile, partnerEmotionalProfile, setPartnerEmotionalProfile } = useAnalysis();
+  const { emotionalProfile, partnerEmotionalProfile, setPartnerEmotionalProfile, matches } = useAnalysis();
   const [expandedSystem, setExpandedSystem] = useState(null);
   const [selectedInsight, setSelectedInsight] = useState(null);
   const [isPartnerLoading, setIsPartnerLoading] = useState(false);
@@ -39,6 +44,20 @@ export function EmotionalRadar() {
 
   const { systems, archetype, radarData, overallConfidence, coverage } = emotionalProfile;
   const confidenceInfo = CONFIDENCE_LABELS[overallConfidence] || CONFIDENCE_LABELS.insufficient;
+
+  // New: Circadian Analysis
+  const circadian = useMemo(() => {
+    if (!matches) return null;
+    const analyzer = new CircadianAnalyzer(matches);
+    const chronoData = analyzer.determineChronotype();
+    const schedule = analyzer.generateSchedule(chronoData, archetype);
+    return {
+      type: chronoData.type, // String 'Wolf'
+      label: chronoData.label, // String 'The Lunar Wolf'
+      branding: chronoData, // Full object if needed elsewhere
+      schedule
+    };
+  }, [matches, archetype]);
 
   const handlePartnerUpload = async (event) => {
     const file = event.target.files?.[0];
@@ -138,25 +157,67 @@ export function EmotionalRadar() {
           </div>
         </div>
 
+        {/* CHRONOTYPE INSIGHT CARD */}
+        {circadian && (
+          <div className="mb-6 flex justify-center">
+            <div className="inline-flex items-center gap-4 p-3 pr-6 rounded-full bg-stone-50 border border-stone-200 dark:bg-white/5 dark:border-white/10 shadow-sm">
+              <div className="w-10 h-10 rounded-full bg-stone-900 text-white dark:bg-white dark:text-stone-900 flex items-center justify-center font-serif font-bold text-lg">
+                {circadian.type === 'Wolf' ? 'W' : circadian.type === 'Lion' ? 'L' : circadian.type === 'Bear' ? 'B' : 'D'}
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest font-bold text-stone-400">
+                  Circadian Rhythm
+                </div>
+                <div className="text-sm font-medium text-stone-900 dark:text-white flex items-center gap-2">
+                  {circadian.type} Chronotype
+                  <span className="text-stone-400 font-normal opacity-50">|</span>
+                  <span className="text-xs font-normal text-stone-500 dark:text-stone-400">
+                    {circadian.schedule.windows[0].label} starts at {circadian.schedule.windows[0].start}:00
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Radar Chart Container - Soft Glow */}
         <div className="mb-8 relative flex justify-center">
           {/* Background Gradient Blob */}
           <div className="absolute inset-0 bg-gradient-to-tr from-rose-200/30 to-indigo-200/30 dark:from-rose-500/10 dark:to-indigo-500/10 blur-3xl opacity-50 rounded-full scale-75" />
 
-          <RadarChart
-            data={radarData}
-            secondaryData={partnerEmotionalProfile?.radarData}
-            size={260}
-            animated={true}
-            showLabels={true}
-            showValues={false}
-            colors={{
-              fill: '#e11d48', // Rose-600
-              stroke: '#e11d48',
-              points: '#fb7185', // Rose-400
-              // Secondary colors are handled by default fallbacks in RadarChart (Teal)
-            }}
-          />
+          {circadian ? (
+            <PowerHourClock schedule={circadian.schedule} size={360}>
+              <div className="scale-75">
+                <RadarChart
+                  data={radarData}
+                  secondaryData={partnerEmotionalProfile?.radarData}
+                  size={260}
+                  animated={true}
+                  showLabels={true}
+                  showValues={false}
+                  colors={{
+                    fill: '#e11d48', // Rose-600
+                    stroke: '#e11d48',
+                    points: '#fb7185', // Rose-400
+                  }}
+                />
+              </div>
+            </PowerHourClock>
+          ) : (
+            <RadarChart
+              data={radarData}
+              secondaryData={partnerEmotionalProfile?.radarData}
+              size={260}
+              animated={true}
+              showLabels={true}
+              showValues={false}
+              colors={{
+                fill: '#e11d48', // Rose-600
+                stroke: '#e11d48',
+                points: '#fb7185', // Rose-400
+              }}
+            />
+          )}
         </div>
 
         {/* CHEMISTRY OVERLAY: SCENARIO ENGINE */}
