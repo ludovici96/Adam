@@ -163,7 +163,7 @@ export class RiskCalculator {
       relativeRisk = Math.min(2 + Math.sqrt(rawRelativeRisk - 2), 5);
     } else if (rawRelativeRisk < 0.5) {
       // Similarly dampen very low risks (protective)
-      relativeRisk = Math.max(0.5 - Math.sqrt(0.5 - rawRelativeRisk) * 0.3, 0.2);
+      relativeRisk = Math.max(0.5 - Math.sqrt(0.5 - rawRelativeRisk), 0.2);
     } else {
       relativeRisk = rawRelativeRisk;
     }
@@ -238,11 +238,11 @@ export class RiskCalculator {
     const confidenceNote = confidence === 'high'
       ? 'This assessment is based on a comprehensive panel of genetic markers.'
       : confidence === 'moderate'
-      ? 'This assessment is based on a partial panel of genetic markers.'
-      : 'This assessment is based on limited genetic data and should be interpreted with caution.';
+        ? 'This assessment is based on a partial panel of genetic markers.'
+        : 'This assessment is based on limited genetic data and should be interpreted with caution.';
 
     return `Your genetic risk for ${condition} appears to be ${riskLevel} ` +
-           `(${Math.round(relativeRisk * 100)}% of average population risk). ${confidenceNote}`;
+      `(${Math.round(relativeRisk * 100)}% of average population risk). ${confidenceNote}`;
   }
 
   /**

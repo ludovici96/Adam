@@ -74,8 +74,6 @@ async function loadClinvarStreaming() {
             console.log(`  Total: ${clinvar.size.toLocaleString()} ClinVar entries`);
             resolve(clinvar);
         });
-
-        pipeline.on('error', reject);
     });
 }
 

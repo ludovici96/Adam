@@ -11,6 +11,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Compiled regex for common genotype detection to improve performance
+const COMMON_GENOTYPE_REGEX = /(?:9[589]%|most common|common\/normal|common genotype|common in (?:clinvar|snpedia|gwas|complete genomics)|miscall|^common$|common.*?normal|normal.*?common)/i;
+
 class DatabaseService {
     constructor() {
         this.database = new Map();
@@ -52,23 +55,7 @@ class DatabaseService {
     // This helps prevent ClinVar strand errors from overriding known-common genotypes
     isCommonGenotype(summary) {
         if (!summary) return false;
-        const lower = summary.toLowerCase();
-        return (
-            lower.includes('99%') ||
-            lower.includes('98%') ||
-            lower.includes('95%') ||
-            lower.includes('most common') ||
-            lower.includes('common/normal') ||
-            lower.includes('common genotype') ||
-            lower.includes('common in clinvar') ||
-            lower.includes('common in snpedia') ||
-            lower.includes('common in gwas') ||
-            lower.includes('common in complete genomics') ||
-            lower.includes('likely miscall') ||
-            lower.includes('miscall') ||
-            lower === 'common' ||
-            (lower.includes('common') && lower.includes('normal'))
-        );
+        return COMMON_GENOTYPE_REGEX.test(summary);
     }
 
     // Adjust ClinVar magnitude based on actual clinical significance in summary
@@ -493,9 +480,29 @@ class DatabaseService {
                         applied++;
                     } else {
                         // Add new entry if it doesn't exist
+                        const newGenotypes = {};
+                        for (const [geno, genoData] of Object.entries(correction.genotypes)) {
+                            // Validate genotype data
+                            if (!genoData || typeof genoData !== 'object') {
+                                console.warn(`  Skipping invalid genotype '${geno}' for ${correction.rsid}`);
+                                continue;
+                            }
+                            newGenotypes[geno] = {
+                                ...genoData,
+                                source: 'manual_correction',
+                                correctionReason: correction.reason || 'No reason provided'
+                            };
+                        }
+
+                        if (Object.keys(newGenotypes).length === 0) {
+                            console.warn(`  Skipping correction for ${correction.rsid}: no valid genotypes after validation`);
+                            skipped++;
+                            continue;
+                        }
+
                         this.database.set(rsidLower, {
                             source: 'manual_correction',
-                            genotypes: { ...correction.genotypes },
+                            genotypes: newGenotypes,
                             correctionReason: correction.reason || 'No reason provided'
                         });
                         applied++;
@@ -575,12 +582,23 @@ class DatabaseService {
         };
     }
 
-    // Get all detected conflicts between sources (for validation)
+    /**
+     * Get all detected conflicts between data sources (e.g., SNPedia vs ClinVar).
+     * Useful for validation and identifying potential data quality issues.
+     *
+     * @returns {Array<Object>} List of all conflict objects containing details like rsid, type, and source magnitudes
+     */
     getConflicts() {
         return this.conflicts;
     }
 
-    // Get high-priority conflicts (strand mismatches and high-magnitude disagreements)
+    /**
+     * Get high-priority conflicts that require attention.
+     * Includes strand mismatches and high-magnitude disagreements (magnitude >= 4)
+     * where sources significantly disagree on clinical importance.
+     *
+     * @returns {Array<Object>} List of critical conflict objects
+     */
     getCriticalConflicts() {
         return this.conflicts.filter(c =>
             c.type === 'strand_mismatch' ||
