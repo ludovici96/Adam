@@ -28,6 +28,9 @@ export function QuickInsights({ matches = [], maxItems = 5 }) {
   const filteredFindings = useMemo(() => {
     return [...matches]
       .filter(m => {
+        // Exclude experimental/coordinate matches
+        if (m.matchMethod === 'coordinate') return false;
+
         const repute = m.repute?.toLowerCase();
         const hasMagnitude = (m.magnitude || 0) >= 0.5;
         if (showPositive) {

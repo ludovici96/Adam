@@ -105,6 +105,7 @@ export function matchVariants(variants) {
     for (const v of variants) {
         let rsid = v.rsid;
         let snpData = null;
+        let matchMethod = 'exact';
 
         if (rsid) {
             stats.rsidLookups++;
@@ -121,6 +122,7 @@ export function matchVariants(variants) {
             if (result) {
                 snpData = result;
                 stats.coordHits++;
+                matchMethod = 'coordinate';
             }
         }
 
@@ -142,7 +144,8 @@ export function matchVariants(variants) {
                     pos: v.pos,
                     category: inferredCategory,
                     source: snpData.source,
-                    gwasAssociations: snpData.gwasAssociations || null
+                    gwasAssociations: snpData.gwasAssociations || null,
+                    matchMethod: matchMethod
                 });
             }
             // Case 2: GWAS-only data - must check if user has risk allele
@@ -185,7 +188,8 @@ export function matchVariants(variants) {
                         category: inferredCategory,
                         source: 'gwas',
                         gwasAssociations: relevantAssociations,
-                        riskAlleleCount: maxRiskCount
+                        riskAlleleCount: maxRiskCount,
+                        matchMethod: matchMethod
                     });
                 } else {
                     // User has SNP but NOT the risk allele - this is normal/protective

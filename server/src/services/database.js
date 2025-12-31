@@ -64,7 +64,9 @@ class DatabaseService {
             lower.includes('common in snpedia') ||
             lower.includes('common in gwas') ||
             lower.includes('common in complete genomics') ||
-            lower.includes('Likely miscall in LivingDNA data') ||
+            lower.includes('likely miscall') ||
+            lower.includes('miscall') ||
+            lower === 'common' ||
             (lower.includes('common') && lower.includes('normal'))
         );
     }
@@ -128,7 +130,7 @@ class DatabaseService {
         }
         // Check for "not provided" or "not specified" without pathogenic - low magnitude
         else if ((summary.includes('not provided') || summary.includes('not specified')) &&
-                 !summary.includes('pathogenic')) {
+            !summary.includes('pathogenic')) {
             adjustedMag = Math.min(adjustedMag, 1);
             adjustedRepute = 'neutral';
         }
