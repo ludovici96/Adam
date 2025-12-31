@@ -57,6 +57,9 @@ function inferCategory(summary, existingCategory) {
 /**
  * Extract the risk allele from GWAS riskAllele field
  * Format is typically "rs12345-A" or "rs12345-?"
+ *
+ * @param {string} riskAlleleStr - The risk allele string from GWAS (e.g., "rs12345-A")
+ * @returns {string|null} The extracted risk allele (e.g., "A") or null if invalid/missing
  */
 function extractRiskAllele(riskAlleleStr) {
     if (!riskAlleleStr) return null;
