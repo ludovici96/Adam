@@ -213,6 +213,11 @@ export function SNPCard({ match, onClick, compact = false }) {
               {source === 'snpedia' ? 'SNPedia' : source === 'clinvar' ? 'ClinVar' : 'GWAS'}
             </span>
           )}
+          {match.matchMethod === 'coordinate' && (
+            <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              Experimental (Coordinate Match)
+            </span>
+          )}
         </div>
 
         <button

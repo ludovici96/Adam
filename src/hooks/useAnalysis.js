@@ -61,19 +61,22 @@ export function useAnalysisFlow() {
 
       categorizeMatches(result.matches);
 
+      // Filter out experimental matches for derived analysis to ensure high confidence
+      const cleanMatches = result.matches.filter(m => m.matchMethod !== 'coordinate');
+
       setProgress({ percent: 85, message: 'Calculating health risk scores...' });
       const riskCalculator = new RiskCalculator();
-      const riskScores = riskCalculator.calculateAllRiskScores(result.matches);
+      const riskScores = riskCalculator.calculateAllRiskScores(cleanMatches);
       setRiskScores(riskScores);
 
       setProgress({ percent: 88, message: 'Analyzing drug interactions...' });
       const pharmaAnalyzer = new PharmaAnalyzer();
-      const pharmaResults = pharmaAnalyzer.analyze(result.matches);
+      const pharmaResults = pharmaAnalyzer.analyze(cleanMatches);
       setPharmaResults(pharmaResults);
 
       setProgress({ percent: 95, message: 'Analyzing personality traits...' });
       const emotionalAnalyzer = new EmotionalAnalyzer();
-      const emotionalProfile = emotionalAnalyzer.analyze(result.matches);
+      const emotionalProfile = emotionalAnalyzer.analyze(cleanMatches);
       setEmotionalProfile(emotionalProfile);
 
       setProgress({ percent: 100, message: 'Analysis complete!' });

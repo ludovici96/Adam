@@ -276,6 +276,7 @@ export function AnalysisProvider({ children }) {
     };
 
     const topFindings = [...state.matches]
+      .filter(m => m.matchMethod !== 'coordinate')
       .sort((a, b) => (b.magnitude || 0) - (a.magnitude || 0))
       .slice(0, 10);
 

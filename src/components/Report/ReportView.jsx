@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Download, FileText, ChevronDown, ChevronUp, BarChart2 } from 'lucide-react';
+import { ArrowLeft, Download, FileText, ChevronDown, ChevronUp, BarChart2, Info } from 'lucide-react';
 import { FilterBar } from './FilterBar';
 import { SNPCard } from './SNPCard';
 import { SNPDetailModal } from './SNPDetailModal';
@@ -35,6 +35,7 @@ export function ReportView({ onBack, onExport }) {
 
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const [showVisualizations, setShowVisualizations] = useState(true);
+  const [showExperimental, setShowExperimental] = useState(false);
   const [chartFilteredMatches, setChartFilteredMatches] = useState(null);
   const filterBarRef = React.useRef(null);
 
@@ -56,6 +57,11 @@ export function ReportView({ onBack, onExport }) {
 
   const filteredMatches = useMemo(() => {
     let result = chartFilteredMatches ? [...chartFilteredMatches] : [...matches];
+
+    // Filter out coordinate/experimental matches unless toggle is on
+    if (!showExperimental) {
+      result = result.filter(match => match.matchMethod !== 'coordinate');
+    }
 
     if (!chartFilteredMatches) {
       if (activeCategory && activeCategory !== 'all') {
@@ -108,7 +114,7 @@ export function ReportView({ onBack, onExport }) {
     });
 
     return result;
-  }, [matches, categories, activeCategory, filters, sort, chartFilteredMatches]);
+  }, [matches, categories, activeCategory, filters, sort, chartFilteredMatches, showExperimental]);
 
   return (
     <div className="space-y-6">
@@ -152,6 +158,20 @@ export function ReportView({ onBack, onExport }) {
           ) : (
             <ChevronDown className="w-4 h-4" />
           )}
+        </button>
+
+        <button
+          onClick={() => setShowExperimental(!showExperimental)}
+          className={clsx(
+            'flex items-center gap-2 px-4 py-2 rounded-xl transition-colors',
+            'text-sm font-medium',
+            showExperimental
+              ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20'
+              : 'bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] border border-gray-200 dark:border-white/10'
+          )}
+        >
+          <Info className="w-4 h-4" />
+          Experimental Matches
         </button>
       </div>
 
@@ -204,7 +224,7 @@ export function ReportView({ onBack, onExport }) {
           </motion.div>
         ) : (
           <motion.div
-            key={`results-${sort.field}-${sort.direction}-${activeCategory}-${filters.search}-${chartFilteredMatches?.length || 0}`}
+            key={`results-${sort.field}-${sort.direction}-${activeCategory}-${filters.search}-${chartFilteredMatches?.length || 0}-${showExperimental}`}
             variants={containerVariants}
             initial="hidden"
             animate="visible"
