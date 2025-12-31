@@ -59,7 +59,7 @@ export function ReportView({ onBack, onExport }) {
     let result = chartFilteredMatches ? [...chartFilteredMatches] : [...matches];
 
     // Filter out coordinate/experimental matches unless toggle is on
-    if (!showExperimental) {
+    if (!chartFilteredMatches && !showExperimental) {
       result = result.filter(match => match.matchMethod !== 'coordinate');
     }
 

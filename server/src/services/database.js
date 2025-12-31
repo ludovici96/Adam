@@ -83,9 +83,9 @@ class DatabaseService {
         const uncertainMatch = summary.match(/uncertain\s*(?:significance)?\s*\((\d+)\)/i);
 
         return {
-            benign: benignMatch ? parseInt(benignMatch[1]) : 0,
-            pathogenic: pathogenicMatch ? parseInt(pathogenicMatch[1]) : 0,
-            uncertain: uncertainMatch ? parseInt(uncertainMatch[1]) : 0
+            benign: benignMatch ? parseInt(benignMatch[1], 10) : 0,
+            pathogenic: pathogenicMatch ? parseInt(pathogenicMatch[1], 10) : 0,
+            uncertain: uncertainMatch ? parseInt(uncertainMatch[1], 10) : 0
         };
     }
 
