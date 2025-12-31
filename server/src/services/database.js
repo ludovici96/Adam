@@ -58,8 +58,54 @@ class DatabaseService {
         return COMMON_GENOTYPE_REGEX.test(summary);
     }
 
+    // --- ClinVar classification helper functions ---
+
+    isBenign(summary) {
+        return summary.includes('benign') && !summary.includes('pathogenic');
+    }
+
+    isLikelyBenign(summary) {
+        return summary.includes('likely benign');
+    }
+
+    isUncertain(summary) {
+        return summary.includes('uncertain significance') || summary.includes('vus');
+    }
+
+    isNotProvided(summary) {
+        return (summary.includes('not provided') || summary.includes('not specified')) &&
+            !summary.includes('pathogenic');
+    }
+
+    parseConflictingCounts(summary) {
+        const benignMatch = summary.match(/benign\s*\((\d+)\)/i);
+        const pathogenicMatch = summary.match(/pathogenic\s*\((\d+)\)/i);
+        const uncertainMatch = summary.match(/uncertain\s*(?:significance)?\s*\((\d+)\)/i);
+
+        return {
+            benign: benignMatch ? parseInt(benignMatch[1]) : 0,
+            pathogenic: pathogenicMatch ? parseInt(pathogenicMatch[1]) : 0,
+            uncertain: uncertainMatch ? parseInt(uncertainMatch[1]) : 0
+        };
+    }
+
+    resolveConflictingClassification(counts) {
+        const { benign, pathogenic, uncertain } = counts;
+        const total = benign + pathogenic + uncertain;
+
+        if (total === 0) {
+            return { maxMag: 1.5, repute: 'neutral' };
+        }
+        if (benign > pathogenic && benign >= uncertain) {
+            return { maxMag: 1, repute: 'neutral' };
+        }
+        if (pathogenic > benign && pathogenic > uncertain) {
+            return { maxMag: 3, repute: null };
+        }
+        return { maxMag: 1.5, repute: 'neutral' };
+    }
+
     // Adjust ClinVar magnitude based on actual clinical significance in summary
-    // ClinVar often has incorrect high magnitudes for benign/uncertain variants
     adjustClinvarMagnitude(genoData) {
         if (!genoData || !genoData.summary) return genoData;
 
@@ -67,57 +113,21 @@ class DatabaseService {
         let adjustedMag = genoData.magnitude || 0;
         let adjustedRepute = genoData.repute;
 
-        // Check for benign classifications - should be magnitude 0
-        if (summary.includes('benign') && !summary.includes('pathogenic')) {
+        if (this.isBenign(summary)) {
             adjustedMag = 0;
             adjustedRepute = 'Good';
-        }
-        // Check for likely benign - should be magnitude 0-0.5
-        else if (summary.includes('likely benign')) {
+        } else if (this.isLikelyBenign(summary)) {
             adjustedMag = Math.min(adjustedMag, 0.5);
             adjustedRepute = 'Good';
-        }
-        // Check for conflicting classifications - need to parse the breakdown
-        else if (summary.includes('conflicting')) {
-            // Parse patterns like "Uncertain significance(1); Benign(2)"
-            const benignMatch = summary.match(/benign\s*\((\d+)\)/i);
-            const pathogenicMatch = summary.match(/pathogenic\s*\((\d+)\)/i);
-            const uncertainMatch = summary.match(/uncertain\s*(?:significance)?\s*\((\d+)\)/i);
-
-            const benignCount = benignMatch ? parseInt(benignMatch[1]) : 0;
-            const pathogenicCount = pathogenicMatch ? parseInt(pathogenicMatch[1]) : 0;
-            const uncertainCount = uncertainMatch ? parseInt(uncertainMatch[1]) : 0;
-            const total = benignCount + pathogenicCount + uncertainCount;
-
-            if (total > 0) {
-                // If majority says benign, treat as benign
-                if (benignCount > pathogenicCount && benignCount >= uncertainCount) {
-                    adjustedMag = Math.min(adjustedMag, 1);
-                    adjustedRepute = 'neutral';
-                }
-                // If majority says pathogenic, keep high but cap at 3
-                else if (pathogenicCount > benignCount && pathogenicCount > uncertainCount) {
-                    adjustedMag = Math.min(adjustedMag, 3);
-                }
-                // Uncertain or mixed - low magnitude
-                else {
-                    adjustedMag = Math.min(adjustedMag, 1.5);
-                    adjustedRepute = 'neutral';
-                }
-            } else {
-                // Can't parse breakdown, default to low magnitude for conflicting
-                adjustedMag = Math.min(adjustedMag, 1.5);
-                adjustedRepute = 'neutral';
-            }
-        }
-        // Check for uncertain significance / VUS - should be low magnitude
-        else if (summary.includes('uncertain significance') || summary.includes('vus')) {
+        } else if (summary.includes('conflicting')) {
+            const counts = this.parseConflictingCounts(summary);
+            const resolved = this.resolveConflictingClassification(counts);
+            adjustedMag = Math.min(adjustedMag, resolved.maxMag);
+            if (resolved.repute) adjustedRepute = resolved.repute;
+        } else if (this.isUncertain(summary)) {
             adjustedMag = Math.min(adjustedMag, 1);
             adjustedRepute = 'neutral';
-        }
-        // Check for "not provided" or "not specified" without pathogenic - low magnitude
-        else if ((summary.includes('not provided') || summary.includes('not specified')) &&
-            !summary.includes('pathogenic')) {
+        } else if (this.isNotProvided(summary)) {
             adjustedMag = Math.min(adjustedMag, 1);
             adjustedRepute = 'neutral';
         }
@@ -205,7 +215,7 @@ class DatabaseService {
                             const clinvarMaxMag = this.getMaxMagnitude(data.genotypes);
 
                             // Detect potential strand mismatches for high-magnitude variants
-                            // Optimized: O(n) instead of O(n*m) using reverse complement lookup map
+                            // O(n+m) using reverse complement lookup map instead of O(n*m) nested loops
                             if (snpediaMaxMag >= 3 || clinvarMaxMag >= 3) {
                                 // Build a map of ClinVar genotypes and their reverse complements
                                 const clinvarByFlipped = new Map();
