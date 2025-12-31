@@ -128,8 +128,6 @@ export function matchVariants(variants) {
             const userGenotype = v.genotype;
             const matchData = snpData.genotypes?.[userGenotype];
 
-            // Only match if we have an exact genotype match - no reverse complement guessing
-            // This prevents false positives from strand orientation mismatches
             if (matchData) {
                 const summary = matchData.summary || '';
                 const inferredCategory = inferCategory(summary, snpData.category);
