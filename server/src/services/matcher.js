@@ -177,15 +177,29 @@ export function matchVariants(variants) {
                     const summary = topAssoc.trait || '';
                     const inferredCategory = inferCategory(summary, snpData.category);
 
-                    // Magnitude based on risk allele count: 1 copy = lower, 2 copies = higher
-                    const magnitude = maxRiskCount === 2 ? 1.5 : 0.5;
+                    // Magnitude: prefer GWAS effect size (odds ratio) if available
+                    let magnitude;
+                    const rawOddsRatio = topAssoc.oddsRatio ?? topAssoc.or;
+                    const parsedOddsRatio = rawOddsRatio != null ? parseFloat(rawOddsRatio) : NaN;
+                    if (Number.isFinite(parsedOddsRatio) && parsedOddsRatio > 0) {
+                        const perAlleleEffect = Math.log2(parsedOddsRatio);
+                        magnitude = Math.min(5, Math.max(0.1, perAlleleEffect * maxRiskCount));
+                    } else {
+                        magnitude = maxRiskCount === 2 ? 1.5 : 0.5;
+                    }
+
+                    // Derive repute from odds ratio
+                    let repute = 'neutral';
+                    if (Number.isFinite(parsedOddsRatio)) {
+                        repute = parsedOddsRatio > 1 ? 'Bad' : parsedOddsRatio < 1 ? 'Good' : 'neutral';
+                    }
 
                     matches.push({
                         rsid: rsid || `${v.chrom}:${v.pos}`,
                         userGenotype,
                         magnitude: magnitude,
-                        repute: 'Bad',
-                        summary: `${summary} (${maxRiskCount} risk allele${maxRiskCount > 1 ? 's' : ''})`,
+                        repute,
+                        summary: `${summary} (${maxRiskCount} ${repute === 'Good' ? 'protective' : 'risk'} allele${maxRiskCount > 1 ? 's' : ''})`,
                         chrom: v.chrom,
                         pos: v.pos,
                         category: inferredCategory,
